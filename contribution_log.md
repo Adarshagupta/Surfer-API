@@ -15,3 +15,7 @@
 ## 2024-12-04
 - Development activities
 - Bug fixes & improvements
+
+## 2024-12-05
+- Development activities
+- Bug fixes & improvements
