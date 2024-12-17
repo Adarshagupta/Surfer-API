@@ -63,3 +63,7 @@
 ## 2024-12-16
 - Development activities
 - Bug fixes & improvements
+
+## 2024-12-17
+- Development activities
+- Bug fixes & improvements
