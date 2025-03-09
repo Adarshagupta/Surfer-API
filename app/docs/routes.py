@@ -15,7 +15,9 @@ import inspect
 import re
 from pathlib import Path
 
-from app.api.routes import chat_router, health_router, travel_router
+from app.api.routes.chat import router as chat_router
+from app.api.routes.health import router as health_router
+from app.api.routes.travel import router as travel_router
 from app.services.llm_service import get_llm_response
 from app.services.web_surfing_service import WebSurfingService
 from app.models.chat_models import (
@@ -25,6 +27,7 @@ from app.models.chat_models import (
     TravelItineraryRequest, TravelItineraryResponse,
     ComplexTaskRequest, ComplexTaskResponse
 )
+from app.docs.api_docs import API_DOCS
 
 # Create the documentation router
 docs_router = APIRouter(tags=["documentation"])
@@ -33,236 +36,616 @@ docs_router = APIRouter(tags=["documentation"])
 templates_path = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(templates_path))
 
-# API endpoint documentation
-API_DOCS = {
-    "health": {
-        "title": "Health Check",
-        "description": "Check if the API is running and the LLM service is accessible.",
-        "endpoints": [
-            {
-                "path": "/api/health",
-                "method": "GET",
-                "summary": "Health Check",
-                "description": "Check if the API is running and the LLM service is accessible.",
-                "parameters": [],
-                "responses": {
-                    "200": {
-                        "description": "API is running and LLM service is accessible",
-                        "content": {
-                            "application/json": {
-                                "example": {
-                                    "status": "ok",
-                                    "ollama": "connected",
-                                    "models": ["llama2", "mistral", "deepseek-r1"]
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        ]
-    },
-    "chat": {
-        "title": "Chat API",
-        "description": "Endpoints for interacting with the LLM in various ways.",
-        "endpoints": [
-            {
-                "path": "/api/chat",
-                "method": "POST",
-                "summary": "Basic Chat",
-                "description": "Send a message to the LLM and get a response.",
-                "request_body": "ChatMessage",
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "model": "ChatResponse"
-                            }
-                        }
-                    }
-                },
-                "example_request": {
-                    "prompt": "What is the capital of France?",
-                    "model": "deepseek-r1:1.5b",
-                    "temperature": 0.7
-                }
-            },
-            {
-                "path": "/api/chat/stream",
-                "method": "POST",
-                "summary": "Streaming Chat",
-                "description": "Send a message to the LLM and get a streaming response.",
-                "request_body": "ChatMessage",
-                "responses": {
-                    "200": {
-                        "description": "Streaming response",
-                        "content": {
-                            "application/json": {
-                                "example": {
-                                    "content": "Partial response content",
-                                    "full_response": "Full response so far"
-                                }
-                            }
-                        }
-                    }
-                },
-                "example_request": {
-                    "prompt": "Write a short poem about AI.",
-                    "model": "deepseek-r1:1.5b",
-                    "temperature": 0.8
-                }
-            },
-            {
-                "path": "/api/chat/advanced",
-                "method": "POST",
-                "summary": "Advanced Chat",
-                "description": "Send a message with template support and additional options.",
-                "request_body": "AdvancedChatMessage",
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "model": "ChatResponse"
-                            }
-                        }
-                    }
-                },
-                "example_request": {
-                    "prompt": "Explain quantum computing",
-                    "template_id": "academic_explanation",
-                    "prompt_type": "academic",
-                    "context": "The user is a college student studying physics."
-                }
-            },
-            {
-                "path": "/api/chat/function",
-                "method": "POST",
-                "summary": "Function Calling Chat",
-                "description": "Chat with function calling capabilities.",
-                "request_body": "FunctionCallingMessage",
-                "responses": {
-                    "200": {
-                        "description": "Successful response with function calls",
-                        "content": {
-                            "application/json": {
-                                "model": "ChatResponse"
-                            }
-                        }
-                    }
-                },
-                "example_request": {
-                    "prompt": "What's the weather in New York?",
-                    "enable_function_calling": True,
-                    "auto_execute_functions": True
-                }
-            },
-            {
-                "path": "/api/chat/document",
-                "method": "POST",
-                "summary": "Document Chat",
-                "description": "Chat with context from a document.",
-                "request_body": "DocumentChatMessage",
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "model": "ChatResponse"
-                            }
-                        }
-                    }
-                },
-                "example_request": {
-                    "prompt": "Summarize the main points of the document",
-                    "document_id": "doc_123456",
-                    "include_document_content": True
-                }
-            },
-            {
-                "path": "/api/chat/websearch",
-                "method": "POST",
-                "summary": "Web Search Chat",
-                "description": "Chat with web search capabilities.",
-                "request_body": "WebSearchChatMessage",
-                "responses": {
-                    "200": {
-                        "description": "Successful response with search results",
-                        "content": {
-                            "application/json": {
-                                "model": "WebSearchResponse"
-                            }
-                        }
-                    }
-                },
-                "example_request": {
-                    "prompt": "What are the latest developments in fusion energy?",
-                    "search_enabled": True,
-                    "num_results": 5,
-                    "include_citations": True
-                }
-            },
-            {
-                "path": "/api/chat/complex-task",
-                "method": "POST",
-                "summary": "Complex Task Processing",
-                "description": "Process complex tasks using advanced web surfing and visual understanding.",
-                "request_body": "ComplexTaskRequest",
-                "responses": {
-                    "200": {
-                        "description": "Successful response with processed task results",
-                        "content": {
-                            "application/json": {
-                                "model": "ComplexTaskResponse"
-                            }
-                        }
-                    }
-                },
-                "example_request": {
-                    "task_description": "Compare the top 5 electric vehicles in 2023 based on range, price, and features.",
-                    "task_type": "comparison",
-                    "visual_understanding": True,
-                    "max_depth": 2
-                }
-            }
-        ]
-    },
-    "travel": {
-        "title": "Travel API",
-        "description": "Endpoints for travel-related services.",
-        "endpoints": [
-            {
-                "path": "/api/travel/itinerary",
-                "method": "POST",
-                "summary": "Generate Travel Itinerary",
-                "description": "Generate a detailed travel itinerary with real-time data.",
-                "request_body": "TravelItineraryRequest",
-                "responses": {
-                    "200": {
-                        "description": "Successful response with travel itinerary",
-                        "content": {
-                            "application/json": {
-                                "model": "TravelItineraryResponse"
-                            }
-                        }
-                    }
-                },
-                "example_request": {
-                    "destination": "Japan",
-                    "start_date": "2023-04-15",
-                    "end_date": "2023-04-23",
-                    "budget_range": "$2500-5000",
-                    "interests": ["historical sites", "hidden gems", "Japanese culture"],
-                    "special_requests": "Looking for a special location for a proposal"
-                }
-            }
-        ]
-    }
-}
-
 # Tutorials
 TUTORIALS = [
+    {
+        "id": "getting-started",
+        "title": "Getting Started with Surfer API",
+        "description": "Learn how to make your first API call to the Surfer API.",
+        "content": """
+# Getting Started with Surfer API
+
+Welcome to the Surfer API! This tutorial will guide you through making your first API call to interact with our powerful language models.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- Python 3.8 or higher installed
+- `requests` library installed (`pip install requests`)
+- An API key (see the [Authentication Tutorial](/docs/tutorials/authentication) for how to get one)
+
+## Making Your First API Call
+
+Let's start by making a simple chat request to the API:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/chat",
+    json={
+        "prompt": "What is the capital of France?",
+        "model": "deepseek-r1:1.5b",
+        "temperature": 0.7
+    }
+)
+
+print(response.json())
+```
+
+### Using Streaming Responses
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/chat/stream",
+    json={
+        "prompt": "Write a short poem about AI.",
+        "model": "deepseek-r1:1.5b"
+    },
+    stream=True
+)
+
+for line in response.iter_lines():
+    if line:
+        print(line.decode('utf-8'))
+```
+
+## Next Steps
+
+- Check out the [API Documentation](/docs/api) for detailed information about all available endpoints
+- Explore the [Tutorials](/docs/tutorials) for more advanced usage examples
+- Try the [API Tester](/docs/tester) to experiment with different API calls
+"""
+    },
+    {
+        "id": "thinking-process",
+        "title": "Using the Thinking Process Feature",
+        "description": "Learn how to use the 'show_thinking' parameter to see the LLM's reasoning process.",
+        "content": """
+# Using the Thinking Process Feature
+
+The Surfer API includes a powerful feature that allows you to see the LLM's reasoning process as it generates a response. This tutorial explains how to use the "thinking process" feature and how it can help you understand and improve your AI interactions.
+
+## What is the Thinking Process?
+
+The thinking process is a step-by-step breakdown of how the LLM approaches a problem or question. It reveals:
+
+- The model's reasoning steps
+- Assumptions it's making
+- Information it's considering
+- How it arrives at its conclusions
+
+This is similar to the "chain-of-thought" or "reasoning" techniques in AI research, but made accessible through a simple API parameter.
+
+## How to Enable the Thinking Process
+
+To enable the thinking process, simply add the `show_thinking` parameter to your API request and set it to `true`:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/chat",
+    json={
+        "prompt": "What would happen if humans could photosynthesize like plants?",
+        "model": "deepseek-r1:7b",
+        "show_thinking": True
+    }
+)
+
+result = response.json()
+print("Thinking Process:")
+print(result["thinking"])
+print("\nFinal Response:")
+print(result["content"])
+```
+
+## Example Output
+
+Here's an example of what the thinking process might look like:
+
+```
+Thinking Process:
+I need to consider the implications of humans having photosynthesis capabilities like plants.
+
+First, let me understand what photosynthesis is:
+- Photosynthesis is the process where plants convert sunlight, water, and carbon dioxide into glucose and oxygen
+- Plants use chlorophyll to capture sunlight energy
+- This provides plants with their energy source
+
+If humans could photosynthesize:
+
+1. Energy production:
+   - Humans would be able to produce some of their own energy from sunlight
+   - This would supplement our caloric intake from food
+   - We wouldn't completely eliminate the need for food since photosynthesis is less efficient than our digestive system for energy
+
+2. Physiological changes:
+   - We would need chlorophyll in our skin, making us appear green
+   - We would need larger surface areas exposed to sunlight
+   - Our skin would likely develop specialized structures similar to leaves
+
+3. Behavioral changes:
+   - People would spend more time outdoors in sunlight
+   - Clothing styles would change to maximize sun exposure
+   - Work and school schedules might revolve around daylight hours
+
+4. Global implications:
+   - Reduced food consumption could help address hunger
+   - Agricultural land use might decrease
+   - Carbon dioxide consumption would increase, potentially helping with climate change
+   - Oxygen production would increase
+
+5. Limitations:
+   - Winter and cloudy days would create energy shortages
+   - People in regions with less sunlight would be disadvantaged
+   - Indoor workers would need special lighting
+
+Final Response:
+If humans could photosynthesize like plants, it would fundamentally transform our biology, society, and relationship with the environment...
+```
+
+## Benefits of Using the Thinking Process
+
+The thinking process feature offers several benefits:
+
+1. **Transparency**: See how the model arrives at its conclusions
+2. **Educational value**: Learn about the model's reasoning approach
+3. **Debugging**: Identify where the model might be making incorrect assumptions
+4. **Prompt improvement**: Understand how to better structure your prompts
+5. **Trust building**: Verify the model's thought process aligns with expectations
+
+## When to Use the Thinking Process
+
+The thinking process is particularly useful for:
+
+- Complex reasoning tasks
+- Problem-solving scenarios
+- Educational contexts
+- Debugging unexpected responses
+- Evaluating model capabilities
+
+## Technical Details
+
+The `show_thinking` parameter works with all models supported by the Surfer API, but the quality and detail of the thinking process may vary between models. Larger models typically provide more sophisticated reasoning.
+
+The thinking process is generated before the final response and uses additional tokens, which may affect your usage limits and response time.
+
+## Next Steps
+
+Try experimenting with the thinking process feature on different types of queries to see how it can enhance your understanding of the model's responses. You can also combine it with other parameters like `temperature` to see how they affect the reasoning process.
+"""
+    },
+    {
+        "id": "web-surfing",
+        "title": "Web Surfing Capabilities",
+        "description": "Learn how to use the web surfing features to get real-time information.",
+        "content": """
+# Web Surfing Capabilities
+
+The Surfer API includes powerful web surfing capabilities that allow the LLM to access and process real-time information from the internet. This tutorial explains how to use these features and how they can enhance your applications.
+
+## What is Web Surfing?
+
+Web surfing in the context of the Surfer API refers to the ability of the LLM to:
+
+1. Search the web for relevant information
+2. Visit and read web pages
+3. Extract and synthesize information from multiple sources
+4. Provide up-to-date responses based on current information
+
+This capability is particularly useful for questions about current events, recent developments, or topics that require the most up-to-date information.
+
+## Basic Web Search
+
+The simplest way to use web surfing is through the `/api/chat/websearch` endpoint:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/chat/websearch",
+    json={
+        "prompt": "What are the latest developments in fusion energy?",
+        "search_enabled": True,
+        "num_results": 5,
+        "include_citations": True
+    }
+)
+
+result = response.json()
+print("Response:", result["content"])
+print("\nSources:")
+for citation in result["citations"]:
+    print(f"- {citation['title']}: {citation['url']}")
+```
+
+### Parameters
+
+- `search_enabled`: Set to `True` to enable web search
+- `num_results`: Number of search results to consider (1-10)
+- `include_citations`: Whether to include source citations in the response
+
+## Advanced Web Surfing
+
+For more complex tasks that require deeper web navigation and understanding, use the `/api/chat/complex-task` endpoint:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/chat/complex-task",
+    json={
+        "task_description": "Compare the top 3 electric vehicles in 2023 based on range, price, and features.",
+        "task_type": "comparison",
+        "visual_understanding": True,
+        "max_depth": 2
+    }
+)
+
+result = response.json()
+print(result["content"])
+```
+
+### Parameters
+
+- `task_description`: Detailed description of the task
+- `task_type`: Type of task (comparison, research, analysis, etc.)
+- `visual_understanding`: Whether to process images on web pages
+- `max_depth`: How many links deep to follow from search results
+
+## Use Cases
+
+Web surfing capabilities are ideal for:
+
+1. **Research assistance**: Gathering information on specific topics
+2. **Competitive analysis**: Comparing products, services, or companies
+3. **News summaries**: Getting updates on current events
+4. **Fact checking**: Verifying claims against current information
+5. **Travel planning**: Getting up-to-date information about destinations
+
+## Best Practices
+
+To get the most out of web surfing:
+
+1. **Be specific**: Clearly define what information you're looking for
+2. **Use appropriate parameters**: Adjust search depth and result count based on your needs
+3. **Verify sources**: Always check the citations provided
+4. **Consider recency**: For time-sensitive topics, explicitly ask for recent information
+5. **Respect privacy**: Don't use web surfing for accessing private or sensitive information
+
+## Limitations
+
+While powerful, web surfing has some limitations:
+
+- Results depend on search engine quality and availability
+- Some websites may block access
+- Complex web applications may not be fully navigable
+- Visual understanding is limited to static images
+- Processing time increases with search depth and complexity
+
+## Example: Travel Research
+
+Here's an example of using web surfing for travel planning:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/travel/itinerary",
+    json={
+        "destination": "Kyoto, Japan",
+        "start_date": "2023-10-15",
+        "end_date": "2023-10-20",
+        "interests": ["historical sites", "local cuisine", "nature"],
+        "budget_range": "medium",
+        "special_requests": "Include some off-the-beaten-path locations"
+    }
+)
+
+result = response.json()
+print(result["summary"])
+print("\nDetailed Itinerary:")
+for section in result["detailed_sections"]:
+    print(f"\n{section['title']}")
+    print(section['content'])
+```
+
+This will generate a complete travel itinerary with up-to-date information about attractions, opening hours, and local conditions.
+
+## Next Steps
+
+Try experimenting with different types of queries and parameters to see how web surfing can enhance your applications. You can also combine web surfing with the thinking process feature to see how the model processes and synthesizes information from the web.
+"""
+    },
+    {
+        "id": "authentication",
+        "title": "Authentication and API Keys",
+        "description": "Learn how to authenticate with the Surfer API and manage API keys.",
+        "content": """
+# Authentication and API Keys
+
+This tutorial covers how to authenticate with the Surfer API, manage API keys, and track usage. The Surfer API provides a comprehensive authentication system that supports both user accounts and API keys.
+
+## User Registration and Login
+
+### Creating a New User Account
+
+To create a new user account, send a POST request to the `/api/auth/signup` endpoint:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/auth/signup",
+    json={
+        "email": "user@example.com",
+        "username": "johndoe",
+        "password": "Password123!",
+        "full_name": "John Doe"
+    }
+)
+
+print(response.json())
+```
+
+### Logging In
+
+To log in and obtain an access token, send a POST request to the `/api/auth/token` endpoint:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/auth/token",
+    data={
+        "username": "johndoe",
+        "password": "Password123!"
+    }
+)
+
+token_data = response.json()
+access_token = token_data["access_token"]
+print(f"Access Token: {access_token}")
+```
+
+Save this access token for use in subsequent requests.
+
+### Using the Access Token
+
+Include the access token in the `Authorization` header for authenticated requests:
+
+```python
+import requests
+
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+
+response = requests.get(
+    "http://localhost:8000/api/auth/me",
+    headers=headers
+)
+
+print(response.json())
+```
+
+## API Key Management
+
+API keys provide a more convenient way to authenticate API requests, especially for applications and scripts.
+
+### Creating an API Key
+
+To create a new API key, send a POST request to the `/api/api-keys` endpoint:
+
+```python
+import requests
+
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+
+response = requests.post(
+    "http://localhost:8000/api/api-keys",
+    headers=headers,
+    json={
+        "name": "My Application",
+        "expires_at": "2024-12-31T23:59:59Z"  # Optional expiration date
+    }
+)
+
+api_key_data = response.json()
+api_key = api_key_data["key"]
+print(f"API Key: {api_key}")
+```
+
+**Important**: The full API key is only shown once when created. Make sure to save it securely.
+
+### Listing Your API Keys
+
+To list all your API keys, send a GET request to the `/api/api-keys` endpoint:
+
+```python
+import requests
+
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+
+response = requests.get(
+    "http://localhost:8000/api/api-keys",
+    headers=headers
+)
+
+api_keys = response.json()
+for key in api_keys:
+    print(f"ID: {key['id']}, Name: {key['name']}, Created: {key['created_at']}")
+```
+
+### Revoking an API Key
+
+To revoke an API key, send a DELETE request to the `/api/api-keys/{api_key_id}` endpoint:
+
+```python
+import requests
+
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+
+api_key_id = 123  # Replace with the actual API key ID
+
+response = requests.delete(
+    f"http://localhost:8000/api/api-keys/{api_key_id}",
+    headers=headers
+)
+
+if response.status_code == 204:
+    print("API key revoked successfully")
+else:
+    print(f"Error: {response.status_code}")
+```
+
+## Using API Keys for Chat
+
+Once you have an API key, you can use it to access the chat API:
+
+```python
+import requests
+
+headers = {
+    "X-API-Key": api_key
+}
+
+response = requests.post(
+    "http://localhost:8000/api/chat",
+    headers=headers,
+    json={
+        "prompt": "What is the capital of France?",
+        "model": "deepseek-r1:1.5b"
+    }
+)
+
+print(response.json())
+```
+
+## User Profile Management
+
+### Getting Your Profile
+
+To get your user profile information, send a GET request to the `/api/users/me/profile` endpoint:
+
+```python
+import requests
+
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+
+response = requests.get(
+    "http://localhost:8000/api/users/me/profile",
+    headers=headers
+)
+
+profile = response.json()
+print(profile)
+```
+
+### Updating Your Profile
+
+To update your profile information, send a PUT request to the `/api/users/me/profile` endpoint:
+
+```python
+import requests
+
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+
+response = requests.put(
+    "http://localhost:8000/api/users/me/profile",
+    headers=headers,
+    json={
+        "email": "newemail@example.com",
+        "full_name": "John Smith",
+        "password": "NewPassword123!"  # Optional - only include if changing password
+    }
+)
+
+updated_profile = response.json()
+print(updated_profile)
+```
+
+## Usage Tracking
+
+### Getting Usage History
+
+To get your API usage history, send a GET request to the `/api/users/me/usage` endpoint:
+
+```python
+import requests
+
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+
+response = requests.get(
+    "http://localhost:8000/api/users/me/usage",
+    headers=headers,
+    params={
+        "limit": 10,  # Number of records to return
+        "offset": 0   # Pagination offset
+    }
+)
+
+usage_records = response.json()
+for record in usage_records:
+    print(f"Endpoint: {record['endpoint']}, Tokens: {record['tokens_used']}, Date: {record['created_at']}")
+```
+
+### Getting Usage Summary
+
+To get a summary of your API usage, send a GET request to the `/api/users/me/usage/summary` endpoint:
+
+```python
+import requests
+
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+
+response = requests.get(
+    "http://localhost:8000/api/users/me/usage/summary",
+    headers=headers
+)
+
+summary = response.json()
+print(f"Total tokens used: {summary['total_tokens_used']}")
+print(f"Total requests: {summary['total_requests']}")
+print(f"Most used model: {summary['most_used_model']}")
+```
+
+## Security Best Practices
+
+1. **Secure your tokens and passwords**: Never expose your access tokens or API keys in client-side code.
+2. **Use HTTPS**: Always use HTTPS for production environments to encrypt data in transit.
+3. **Set expiration dates**: Consider setting expiration dates for API keys that aren't needed indefinitely.
+4. **Limit permissions**: Use the principle of least privilege - only grant the permissions necessary.
+5. **Rotate keys regularly**: Regularly rotate API keys, especially for sensitive applications.
+6. **Monitor usage**: Regularly check your usage statistics to detect any unusual activity.
+
+## Next Steps
+
+Now that you understand how to authenticate and manage API keys, you can:
+
+- Explore the [API Documentation](/docs/api) for detailed information about all available endpoints
+- Try the [API Tester](/docs/tester) to experiment with different API calls
+- Check out the [Getting Started Tutorial](/docs/tutorials/getting-started) for basic usage examples
+"""
+    },
     {
         "id": "getting-started",
         "title": "Getting Started",
@@ -351,149 +734,6 @@ for line in response.iter_lines():
 - Check out the [API Documentation](/docs/api) for detailed information about all available endpoints
 - Explore the [Tutorials](/docs/tutorials) for more advanced usage examples
 - Try the [API Tester](/docs/tester) to experiment with different API calls
-"""
-    },
-    {
-        "id": "thinking-process",
-        "title": "Using the Thinking Process Feature",
-        "description": "Learn how to use the 'show_thinking' parameter to see the LLM's reasoning process.",
-        "content": """
-# Using the Thinking Process Feature
-
-The Surfer API includes a powerful feature that allows you to see the LLM's reasoning process as it generates a response. This tutorial explains how to use the "thinking process" feature and how it can help you understand and improve your AI interactions.
-
-## What is the Thinking Process?
-
-The thinking process is a step-by-step breakdown of how the LLM approaches a problem or question. It reveals:
-
-- The model's reasoning steps
-- Assumptions it's making
-- Information it's considering
-- How it arrives at its conclusions
-
-This is similar to the "chain-of-thought" or "reasoning" techniques in AI research, but made accessible through a simple API parameter.
-
-## How to Enable the Thinking Process
-
-To enable the thinking process in your API calls, simply set the `show_thinking` parameter to `true` in your request:
-
-```python
-import requests
-
-response = requests.post(
-    "http://localhost:8000/api/chat",
-    json={
-        "prompt": "Solve this math problem: If a train travels at 120 km/h and another train travels at 80 km/h in the opposite direction, how long will it take for them to be 500 km apart if they start 100 km apart?",
-        "model": "deepseek-r1:1.5b",
-        "show_thinking": True
-    }
-)
-
-result = response.json()
-print("Response:", result["response"])
-print("\nThinking Process:", result["thinking_process"])
-```
-
-## Example Output
-
-When you enable the thinking process, the response will include both the final answer and the thinking process that led to it:
-
-```json
-{
-  "response": "The trains will be 500 km apart after 2.5 hours.",
-  "thinking_process": "To solve this problem, I need to find how long it takes for the trains to be 500 km apart when they start 100 km apart.\n\nFirst, let me identify what I know:\n- Train A travels at 120 km/h\n- Train B travels at 80 km/h in the opposite direction\n- They start 100 km apart\n- I need to find when they'll be 500 km apart\n\nSince they're traveling in opposite directions, their relative speed is the sum of their individual speeds:\n120 km/h + 80 km/h = 200 km/h\n\nThey need to increase their distance from 100 km to 500 km, so they need to add 400 km of separation.\n\nTime = Distance ÷ Speed\nTime = 400 km ÷ 200 km/h\nTime = 2 hours\n\nWait, I need to double-check this. After 2 hours:\n- Train A travels: 120 km/h × 2 h = 240 km\n- Train B travels: 80 km/h × 2 h = 160 km\n- Total distance covered: 240 km + 160 km = 400 km\n- Initial separation: 100 km\n- Final separation: 100 km + 400 km = 500 km\n\nSo the trains will be 500 km apart after 2 hours.",
-  "model": "deepseek-r1:1.5b",
-  "status": "success",
-  "processing_time": 1.25
-}
-```
-
-## How the Thinking Process Works
-
-Behind the scenes, the Surfer API instructs the LLM to include its reasoning process using special tags. The model is prompted to:
-
-1. Think through the problem step-by-step within `<think>...</think>` tags
-2. Provide a concise final answer outside these tags
-3. The API then extracts and separates these components for you
-
-## Benefits of Using the Thinking Process
-
-### 1. Debugging and Verification
-
-The thinking process helps you verify that the model is approaching problems correctly. If the final answer seems incorrect, you can examine the reasoning to find where the model might have made a mistake.
-
-### 2. Educational Value
-
-For complex topics, seeing the step-by-step reasoning can be educational, helping users understand how to approach similar problems.
-
-### 3. Transparency
-
-Increases trust by making the AI's reasoning transparent rather than presenting answers as if from a black box.
-
-### 4. Improved Prompting
-
-By seeing how the model interprets and reasons about your prompts, you can refine them to get better results.
-
-## Advanced Usage: Streaming with Thinking Process
-
-You can also use the thinking process with streaming responses:
-
-```python
-import requests
-import json
-
-response = requests.post(
-    "http://localhost:8000/api/chat/stream",
-    json={
-        "prompt": "Explain how photosynthesis works.",
-        "model": "deepseek-r1:1.5b",
-        "show_thinking": True
-    },
-    stream=True
-)
-
-for line in response.iter_lines():
-    if line:
-        chunk = json.loads(line.decode('utf-8'))
-        if "thinking_process" in chunk:
-            print("\nThinking:", chunk["thinking_process"])
-        if "content" in chunk:
-            print("Response:", chunk["content"])
-```
-
-## Best Practices
-
-1. **Use Selectively**: The thinking process can make responses more verbose, so use it when you need insight into the reasoning, not for every request.
-
-2. **Complex Problems**: It's most useful for complex reasoning tasks like math problems, logical puzzles, or multi-step analyses.
-
-3. **Educational Settings**: Great for educational contexts where the process is as important as the answer.
-
-4. **Debugging**: Use it when responses seem incorrect or inconsistent to understand why.
-
-## Technical Details
-
-The thinking process is implemented using a special prompt engineering technique that instructs the model to:
-
-```
-<think>
-[Detailed reasoning process goes here]
-</think>
-
-[Final concise answer here]
-```
-
-The API then parses this format to separate the thinking process from the final response.
-
-## Limitations
-
-- Not all models support the thinking process equally well
-- Very complex problems might exceed token limits
-- The thinking process is the model's own reasoning, which may still contain errors
-
-## Conclusion
-
-The thinking process feature provides a window into the LLM's reasoning, making AI interactions more transparent, educational, and easier to debug. By enabling this feature when appropriate, you can gain deeper insights into how the model approaches problems and generates responses.
 """
     },
     {

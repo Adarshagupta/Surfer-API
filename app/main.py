@@ -14,6 +14,9 @@ from app.docs import docs_router
 # Import logging
 from app.core.logging import RequestLoggingMiddleware, logger
 
+# Import database
+from app.core.database import engine, Base
+
 # Load environment variables
 load_dotenv()
 
