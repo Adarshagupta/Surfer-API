@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Surfer API Documentation{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" id="prism-light">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css" id="prism-dark">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-color-dark: #2980b9;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --dark-bg: #212529;
+            --text-color: #333;
+            --light-text: #f8f9fa;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --card-shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.15);
+            --border-radius: 10px;
+            --transition-speed: 0.3s;
+        }
+        
+        [data-bs-theme="dark"] {
+            --primary-color: #4dabf7;
+            --primary-color-dark: #339af0;
+            --secondary-color: #495057;
+            --accent-color: #fa5252;
+            --light-bg: #343a40;
+            --dark-bg: #212529;
+            --text-color: #e9ecef;
+            --light-text: #f8f9fa;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --card-shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+        
+        .navbar {
+            background-color: var(--secondary-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 1rem;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .navbar-brand i {
+            font-size: 1.8rem;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            transition: color var(--transition-speed);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            margin: 0 0.2rem;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar {
+            background-color: var(--light-bg);
+            padding: 20px;
+            height: calc(100vh - 60px);
+            position: sticky;
+            top: 60px;
+            overflow-y: auto;
+            transition: background-color var(--transition-speed);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-bs-theme="dark"] .sidebar {
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-heading {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .sidebar-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        [data-bs-theme="dark"] .sidebar-item {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .sidebar-link {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: color var(--transition-speed);
+            display: block;
+            padding: 8px 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .sidebar-link:hover, .sidebar-link.active {
+            color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .main-content {
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+            border: none;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-shadow-hover);
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+            padding: 1rem 1.25rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .card-footer {
+            background-color: rgba(0, 0, 0, 0.03);
+            padding: 1rem 1.25rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.125);
+        }
+        
+        [data-bs-theme="dark"] .card-footer {
+            background-color: rgba(255, 255, 255, 0.03);
+            border-top: 1px solid rgba(255, 255, 255, 0.125);
+        }
+        
+        .method-badge {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-weight: 600;
+        }
+        
+        .method-get {
+            background-color: #28a745;
+        }
+        
+        .method-post {
+            background-color: #007bff;
+        }
+        
+        .method-put {
+            background-color: #fd7e14;
+        }
+        
+        .method-delete {
+            background-color: #dc3545;
+        }
+        
+        pre {
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        code {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .endpoint-path {
+            font-family: 'Fira Code', monospace;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        [data-bs-theme="dark"] .endpoint-path {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .api-tester {
+            background-color: var(--light-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: background-color var(--transition-speed);
+        }
+        
+        .response-container {
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .tutorial-content {
+            line-height: 1.8;
+        }
+        
+        .tutorial-content h1, .tutorial-content h2, .tutorial-content h3 {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        
+        .tutorial-content h1 {
+            font-size: 2.5rem;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .tutorial-content h2 {
+            font-size: 1.8rem;
+        }
+        
+        .tutorial-content h3 {
+            font-size: 1.4rem;
+        }
+        
+        .tutorial-content p {
+            margin-bottom: 1.2rem;
+        }
+        
+        .tutorial-content ul, .tutorial-content ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        
+        .tutorial-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .tutorial-content pre {
+            margin: 1.5rem 0;
+        }
+        
+        .tutorial-content img {
+            max-width: 100%;
+            border-radius: 5px;
+            margin: 1.5rem 0;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .tutorial-content blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+            margin-left: 0;
+            color: rgba(0, 0, 0, 0.6);
+            font-style: italic;
+        }
+        
+        [data-bs-theme="dark"] .tutorial-content blockquote {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+        }
+        
+        .search-result {
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: var(--border-radius);
+            background-color: var(--light-bg);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+            box-shadow: var(--card-shadow);
+        }
+        
+        .search-result:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--card-shadow-hover);
+        }
+        
+        .search-result-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .search-result-type {
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+        
+        .footer {
+            background-color: var(--secondary-color);
+            color: var(--light-text);
+            padding: 40px 0 20px;
+            margin-top: 80px;
+        }
+        
+        .footer h5 {
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            color: var(--primary-color);
+        }
+        
+        .footer a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color var(--transition-speed);
+        }
+        
+        .footer a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .theme-toggle {
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color var(--transition-speed);
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .theme-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-color-dark);
+            border-color: var(--primary-color-dark);
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .breadcrumb {
+            background-color: var(--light-bg);
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+        }
+        
+        [data-bs-theme="dark"] .breadcrumb {
+            background-color: var(--dark-bg);
+        }
+        
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+        
+        .breadcrumb-item.active {
+            color: var(--text-color);
+        }
+        
+        .thinking-process {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        
+        .thinking-process h4 {
+            color: var(--primary-color);
+            margin-top: 0;
+            font-weight: 600;
+        }
+        
+        .thinking-process pre {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: var(--text-color);
+        }
+        
+        [data-bs-theme="dark"] .thinking-process pre {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .feature-card i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .feature-card h3 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-info {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-color: var(--primary-color);
+            color: var(--text-color);
+        }
+        
+        .alert-info h4 {
+            color: var(--primary-color);
+        }
+        
+        .table {
+            margin-bottom: 2rem;
+        }
+        
+        .table th {
+            background-color: rgba(0, 0, 0, 0.03);
+            font-weight: 600;
+        }
+        
+        [data-bs-theme="dark"] .table th {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/docs">
+                <i class="bi bi-braces-asterisk"></i>
+                Surfer API
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/docs">
+                            <i class="bi bi-house-door"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/docs/api">
+                            <i class="bi bi-code-slash"></i> API Reference
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/docs/tutorials">
+                            <i class="bi bi-book"></i> Tutorials
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/docs/models">
+                            <i class="bi bi-diagram-3"></i> Models
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/docs/tester">
+                            <i class="bi bi-lightning-charge"></i> API Tester
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <form class="d-flex me-2" action="/docs/search" method="get">
+                        <div class="input-group">
+                            <input class="form-control" type="search" name="query" placeholder="Search docs..." aria-label="Search">
+                            <button class="btn btn-outline-light" type="submit">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <div class="theme-toggle" id="theme-toggle">
+                        <i class="bi bi-moon-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            {% block sidebar %}{% endblock %}
+            <main class="{% block main_class %}col-md-9 ms-sm-auto col-lg-10 px-md-4{% endblock %}">
+                <div class="main-content">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-5">
+                    <span class="footer-logo">
+                        <i class="bi bi-braces-asterisk"></i> Surfer API
+                    </span>
+                    <p>A powerful API for interacting with various LLM providers and advanced web surfing capabilities. Featuring real-time data collection, visual understanding, and complex task processing.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Documentation</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="/docs"><i class="bi bi-house-door"></i> Home</a></li>
+                        <li class="mb-2"><a href="/docs/api"><i class="bi bi-code-slash"></i> API Reference</a></li>
+                        <li class="mb-2"><a href="/docs/tutorials"><i class="bi bi-book"></i> Tutorials</a></li>
+                        <li class="mb-2"><a href="/docs/models"><i class="bi bi-diagram-3"></i> Models</a></li>
+                        <li class="mb-2"><a href="/docs/tester"><i class="bi bi-lightning-charge"></i> API Tester</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Resources</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="https://github.com/yourusername/Surfer-API"><i class="bi bi-github"></i> GitHub Repository</a></li>
+                        <li class="mb-2"><a href="https://fastapi.tiangolo.com/"><i class="bi bi-box"></i> FastAPI Documentation</a></li>
+                        <li class="mb-2"><a href="https://ollama.ai/"><i class="bi bi-cpu"></i> Ollama</a></li>
+                        <li class="mb-2"><a href="https://platform.openai.com/docs/api-reference"><i class="bi bi-robot"></i> OpenAI API</a></li>
+                        <li class="mb-2"><a href="https://docs.anthropic.com/claude/reference"><i class="bi bi-robot"></i> Anthropic API</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="mt-4 mb-3">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2023 Surfer API. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.0/marked.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Convert markdown to HTML
+            const markdownElements = document.querySelectorAll('.markdown-content');
+            markdownElements.forEach(element => {
+                element.innerHTML = marked.parse(element.textContent);
+            });
+            
+            // Highlight code blocks
+            Prism.highlightAll();
+            
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('theme-toggle');
+            const htmlElement = document.documentElement;
+            const themeIcon = themeToggle.querySelector('i');
+            
+            // Check for saved theme preference or use preferred color scheme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                htmlElement.setAttribute('data-bs-theme', savedTheme);
+                updateThemeIcon(savedTheme);
+            } else {
+                const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const initialTheme = prefersDarkMode ? 'dark' : 'light';
+                htmlElement.setAttribute('data-bs-theme', initialTheme);
+                updateThemeIcon(initialTheme);
+            }
+            
+            // Toggle theme on click
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = htmlElement.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                htmlElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                
+                updateThemeIcon(newTheme);
+            });
+            
+            function updateThemeIcon(theme) {
+                if (theme === 'dark') {
+                    themeIcon.classList.remove('bi-moon-fill');
+                    themeIcon.classList.add('bi-sun-fill');
+                } else {
+                    themeIcon.classList.remove('bi-sun-fill');
+                    themeIcon.classList.add('bi-moon-fill');
+                }
+            }
+            
+            // Set active nav link based on current page
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                if (currentPath === linkPath || 
+                    (linkPath !== '/docs' && currentPath.startsWith(linkPath))) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

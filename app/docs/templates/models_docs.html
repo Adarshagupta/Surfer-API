@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Data Models - Surfer API Documentation{% endblock %}
+
+{% block sidebar %}
+<div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    <div class="position-sticky pt-3">
+        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+            <span>Models</span>
+        </h6>
+        <ul class="nav flex-column">
+            {% for name, model in models_info.items() %}
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="#{{ name }}">
+                    {{ name }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h1 class="mb-4">Data Models</h1>
+            <p class="lead">
+                Documentation for the data models used in the Surfer API.
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            {% for name, model in models_info.items() %}
+            <div class="card mb-5" id="{{ name }}">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ name }}</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ model.description }}</p>
+                    
+                    <h4 class="mt-4">Fields</h4>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for field in model.fields %}
+                            <tr>
+                                <td><code>{{ field.name }}</code></td>
+                                <td><code>{{ field.type }}</code></td>
+                                <td>{{ "Yes" if field.required else "No" }}</td>
+                                <td>{{ field.description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <h4 class="mt-4">Example</h4>
+                    <pre><code class="language-json">{
+    {% for field in model.fields %}
+    "{{ field.name }}": {% if "str" in field.type %}"example"{% elif "int" in field.type %}123{% elif "float" in field.type %}0.5{% elif "bool" in field.type %}true{% elif "List" in field.type %}[]{% elif "Dict" in field.type %}{}{% else %}null{% endif %}{% if not loop.last %},{% endif %}
+    {% endfor %}
+}</code></pre>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

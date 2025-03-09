@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}API Reference - Surfer API Documentation{% endblock %}
+
+{% block sidebar %}
+<div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    <div class="position-sticky pt-3">
+        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+            <span>API Categories</span>
+        </h6>
+        <ul class="nav flex-column">
+            {% for category, data in api_docs.items() %}
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/api/{{ category }}">
+                    {{ data.title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h1 class="mb-4">API Reference</h1>
+            <p class="lead">
+                Detailed documentation of all API endpoints, request/response formats, and examples.
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for category, data in api_docs.items() %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ data.title }}</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ data.description }}</p>
+                    <ul class="list-unstyled">
+                        {% for endpoint in data.endpoints %}
+                        <li class="mb-2">
+                            <span class="badge method-badge method-{{ endpoint.method|lower }}">{{ endpoint.method }}</span>
+                            <code class="endpoint-path">{{ endpoint.path }}</code>
+                            <small class="d-block mt-1">{{ endpoint.summary }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="/docs/api/{{ category }}" class="btn btn-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">API Authentication</h5>
+                </div>
+                <div class="card-body">
+                    <p>The Surfer API uses API keys for authentication. You can configure your API keys in the <code>.env</code> file.</p>
+                    
+                    <h5 class="mt-4">Authentication Methods</h5>
+                    <ul>
+                        <li>
+                            <strong>Environment Variables</strong>
+                            <p>Configure your API keys in the <code>.env</code> file.</p>
+                        </li>
+                        <li>
+                            <strong>Request Headers</strong>
+                            <p>You can also pass API keys in the request headers for specific providers.</p>
+                            <pre><code class="language-python">import requests
+
+headers = {
+    "X-API-Key": "your_api_key",
+    "X-Provider": "openai"
+}
+
+response = requests.post(
+    "http://localhost:8000/api/chat",
+    headers=headers,
+    json={
+        "prompt": "What is the capital of France?"
+    }
+)
+
+print(response.json())</code></pre>
+                        </li>
+                    </ul>
+                    
+                    <h5 class="mt-4">Rate Limiting</h5>
+                    <p>The API has rate limiting to prevent abuse. The limits depend on the LLM provider you're using.</p>
+                    
+                    <div class="alert alert-info mt-4">
+                        <h5 class="alert-heading">Need more information?</h5>
+                        <p>Check out the <a href="/docs/tutorials/environment-setup">Environment Configuration</a> tutorial for more details on setting up API keys.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

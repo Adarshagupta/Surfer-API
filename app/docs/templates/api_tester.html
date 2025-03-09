@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}API Tester - Surfer API Documentation{% endblock %}
+
+{% block sidebar %}
+<div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    <div class="position-sticky pt-3">
+        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+            <span>API Categories</span>
+        </h6>
+        <ul class="nav flex-column">
+            {% for category, data in api_docs.items() %}
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="#category-{{ category }}">
+                    {{ data.title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h1 class="mb-4">API Tester</h1>
+            <p class="lead">
+                Test the Surfer API endpoints directly from your browser. Select an endpoint, configure the request parameters, and see the response in real-time.
+            </p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card api-tester">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Test an API Endpoint</h5>
+                    
+                    <div class="mb-3">
+                        <label for="endpoint-select" class="form-label">Select Endpoint</label>
+                        <select class="form-select" id="endpoint-select">
+                            <option value="">-- Select an endpoint --</option>
+                            {% for category, data in api_docs.items() %}
+                                <optgroup label="{{ data.title }}">
+                                    {% for endpoint in data.endpoints %}
+                                    <option value="{{ endpoint.path }}" 
+                                            data-method="{{ endpoint.method }}"
+                                            data-request-body="{{ endpoint.get('request_body', '') }}"
+                                            data-example="{{ endpoint.get('example_request', {}) | tojson }}">
+                                        {{ endpoint.method }} {{ endpoint.path }} - {{ endpoint.summary }}
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="request-method" class="form-label">Method</label>
+                        <input type="text" class="form-control" id="request-method" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="request-url" class="form-label">URL</label>
+                        <input type="text" class="form-control" id="request-url" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="request-body" class="form-label">Request Body (JSON)</label>
+                        <textarea class="form-control" id="request-body" rows="10"></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-primary" id="send-request">Send Request</button>
+                        <button class="btn btn-secondary" id="copy-code">Copy as Python Code</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5" id="response-section" style="display: none;">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Response</h5>
+                    <span class="badge bg-success" id="status-code"></span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Headers</label>
+                        <pre><code class="language-json" id="response-headers"></code></pre>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Body</label>
+                        <div class="response-container">
+                            <pre><code class="language-json" id="response-body"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">API Endpoints</h5>
+                </div>
+                <div class="card-body">
+                    {% for category, data in api_docs.items() %}
+                    <div class="mb-4" id="category-{{ category }}">
+                        <h3>{{ data.title }}</h3>
+                        <p>{{ data.description }}</p>
+                        
+                        {% for endpoint in data.endpoints %}
+                        <div class="card mb-3">
+                            <div class="card-header d-flex align-items-center">
+                                <span class="method-badge method-{{ endpoint.method|lower }}">{{ endpoint.method }}</span>
+                                <span class="endpoint-path">{{ endpoint.path }}</span>
+                            </div>
+                            <div class="card-body">
+                                <h5>{{ endpoint.summary }}</h5>
+                                <p>{{ endpoint.description }}</p>
+                                
+                                {% if endpoint.get('request_body') %}
+                                <div class="mb-3">
+                                    <h6>Request Body</h6>
+                                    <p><code>{{ endpoint.request_body }}</code></p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if endpoint.get('example_request') %}
+                                <div class="mb-3">
+                                    <h6>Example Request</h6>
+                                    <pre><code class="language-json">{{ endpoint.example_request | tojson(indent=2) }}</code></pre>
+                                </div>
+                                {% endif %}
+                                
+                                <button class="btn btn-sm btn-primary test-endpoint" 
+                                        data-path="{{ endpoint.path }}" 
+                                        data-method="{{ endpoint.method }}">
+                                    Test This Endpoint
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const endpointSelect = document.getElementById('endpoint-select');
+        const requestMethod = document.getElementById('request-method');
+        const requestUrl = document.getElementById('request-url');
+        const requestBody = document.getElementById('request-body');
+        const sendRequestBtn = document.getElementById('send-request');
+        const copyCodeBtn = document.getElementById('copy-code');
+        const responseSection = document.getElementById('response-section');
+        const statusCode = document.getElementById('status-code');
+        const responseHeaders = document.getElementById('response-headers');
+        const responseBody = document.getElementById('response-body');
+        
+        // Get base URL
+        const baseUrl = window.location.origin;
+        
+        // Handle endpoint selection
+        endpointSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            
+            if (selectedOption.value) {
+                requestMethod.value = selectedOption.dataset.method;
+                requestUrl.value = baseUrl + selectedOption.value;
+                
+                // Set example request body if available
+                if (selectedOption.dataset.example) {
+                    try {
+                        const exampleData = JSON.parse(selectedOption.dataset.example);
+                        requestBody.value = JSON.stringify(exampleData, null, 2);
+                    } catch (e) {
+                        requestBody.value = '{}';
+                    }
+                } else {
+                    requestBody.value = '{}';
+                }
+            } else {
+                requestMethod.value = '';
+                requestUrl.value = '';
+                requestBody.value = '';
+            }
+        });
+        
+        // Handle "Test This Endpoint" buttons
+        document.querySelectorAll('.test-endpoint').forEach(button => {
+            button.addEventListener('click', function() {
+                const path = this.dataset.path;
+                const method = this.dataset.method;
+                
+                // Find and select the corresponding option in the dropdown
+                for (let i = 0; i < endpointSelect.options.length; i++) {
+                    const option = endpointSelect.options[i];
+                    if (option.value === path && option.dataset.method === method) {
+                        endpointSelect.selectedIndex = i;
+                        endpointSelect.dispatchEvent(new Event('change'));
+                        
+                        // Scroll to the top
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                        break;
+                    }
+                }
+            });
+        });
+        
+        // Handle send request button
+        sendRequestBtn.addEventListener('click', async function() {
+            if (!requestUrl.value) {
+                alert('Please select an endpoint first.');
+                return;
+            }
+            
+            try {
+                // Parse request body
+                let payload = {};
+                if (requestBody.value.trim()) {
+                    try {
+                        payload = JSON.parse(requestBody.value);
+                    } catch (e) {
+                        alert('Invalid JSON in request body. Please check your syntax.');
+                        return;
+                    }
+                }
+                
+                // Disable button and show loading state
+                sendRequestBtn.disabled = true;
+                sendRequestBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+                
+                // Send request to the proxy endpoint
+                const response = await fetch('/docs/tester/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        endpoint: requestUrl.value.replace(baseUrl, ''),
+                        method: requestMethod.value,
+                        payload: payload
+                    })
+                });
+                
+                const result = await response.json();
+                
+                // Display response
+                responseSection.style.display = 'block';
+                
+                if (result.error) {
+                    statusCode.textContent = 'Error';
+                    statusCode.className = 'badge bg-danger';
+                    responseHeaders.textContent = '';
+                    responseBody.textContent = JSON.stringify({ error: result.error }, null, 2);
+                } else {
+                    statusCode.textContent = result.status_code;
+                    statusCode.className = result.status_code >= 200 && result.status_code < 300 
+                        ? 'badge bg-success' 
+                        : 'badge bg-danger';
+                    
+                    responseHeaders.textContent = JSON.stringify(result.headers, null, 2);
+                    
+                    if (typeof result.content === 'object') {
+                        responseBody.textContent = JSON.stringify(result.content, null, 2);
+                    } else {
+                        responseBody.textContent = result.content;
+                    }
+                }
+                
+                // Highlight code
+                Prism.highlightAll();
+                
+                // Scroll to response section
+                responseSection.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while sending the request. Please check the console for details.');
+            } finally {
+                // Reset button state
+                sendRequestBtn.disabled = false;
+                sendRequestBtn.textContent = 'Send Request';
+            }
+        });
+        
+        // Handle copy code button
+        copyCodeBtn.addEventListener('click', function() {
+            if (!requestUrl.value) {
+                alert('Please select an endpoint first.');
+                return;
+            }
+            
+            try {
+                // Generate Python code
+                const method = requestMethod.value.toLowerCase();
+                const url = requestUrl.value;
+                let payload = requestBody.value.trim() ? JSON.parse(requestBody.value) : {};
+                
+                let code = `import requests\n\n`;
+                
+                if (method === 'get') {
+                    code += `response = requests.get(\n    "${url}"\n)`;
+                } else {
+                    code += `response = requests.${method}(\n    "${url}",\n    json=${JSON.stringify(payload, null, 4).replace(/^/gm, '    ').trim()}\n)`;
+                }
+                
+                code += `\n\n# Print the response\nprint(response.status_code)\nprint(response.json())`;
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(code).then(() => {
+                    alert('Python code copied to clipboard!');
+                }).catch(err => {
+                    console.error('Failed to copy code:', err);
+                    alert('Failed to copy code. Please check the console for details.');
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while generating the code. Please check the console for details.');
+            }
+        });
+    });
+</script>
+{% endblock %} 

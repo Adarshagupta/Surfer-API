@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tutorial.title }} - Surfer API Documentation{% endblock %}
+
+{% block sidebar %}
+<div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    <div class="position-sticky pt-3">
+        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+            <span>Tutorials</span>
+        </h6>
+        <ul class="nav flex-column">
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials">
+                    <i class="bi bi-grid"></i> All Tutorials
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/getting-started">
+                    <i class="bi bi-rocket-takeoff"></i> Getting Started
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/thinking-process">
+                    <i class="bi bi-lightbulb"></i> Thinking Process
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/advanced-chat">
+                    <i class="bi bi-chat-dots"></i> Advanced Chat
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/travel-itinerary">
+                    <i class="bi bi-map"></i> Travel Itineraries
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/environment-setup">
+                    <i class="bi bi-gear"></i> Environment Setup
+                </a>
+            </li>
+        </ul>
+        
+        {% if tutorial.id == "thinking-process" %}
+        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+            <span>On This Page</span>
+        </h6>
+        <ul class="nav flex-column">
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="#what-is-thinking-process">
+                    What is the Thinking Process?
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="#how-to-enable">
+                    How to Enable
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="#example-output">
+                    Example Output
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="#how-it-works">
+                    How It Works
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="#benefits">
+                    Benefits
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="#advanced-usage">
+                    Advanced Usage
+                </a>
+            </li>
+        </ul>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/docs">Documentation</a></li>
+                    <li class="breadcrumb-item"><a href="/docs/tutorials">Tutorials</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ tutorial.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        {% if tutorial.id == "getting-started" %}
+                        <i class="bi bi-rocket-takeoff"></i>
+                        {% elif tutorial.id == "thinking-process" %}
+                        <i class="bi bi-lightbulb"></i>
+                        {% elif tutorial.id == "advanced-chat" %}
+                        <i class="bi bi-chat-dots"></i>
+                        {% elif tutorial.id == "travel-itinerary" %}
+                        <i class="bi bi-map"></i>
+                        {% elif tutorial.id == "environment-setup" %}
+                        <i class="bi bi-gear"></i>
+                        {% else %}
+                        <i class="bi bi-book"></i>
+                        {% endif %}
+                        {{ tutorial.title }}
+                    </h5>
+                    <div>
+                        <a href="/docs/tester" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-lightning-charge"></i> Try in API Tester
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="tutorial-content markdown-content">
+                        {{ tutorial.content }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between">
+                <a href="/docs/tutorials" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Tutorials
+                </a>
+                <a href="/docs/tester" class="btn btn-primary">
+                    Try it in API Tester <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add IDs to headings for the thinking process tutorial
+        if (window.location.pathname.includes('/thinking-process')) {
+            const content = document.querySelector('.tutorial-content');
+            
+            // Add ID to "What is the Thinking Process?" section
+            const whatIsHeading = Array.from(content.querySelectorAll('h2')).find(h => h.textContent.includes('What is the Thinking Process'));
+            if (whatIsHeading) whatIsHeading.id = 'what-is-thinking-process';
+            
+            // Add ID to "How to Enable the Thinking Process" section
+            const howToEnableHeading = Array.from(content.querySelectorAll('h2')).find(h => h.textContent.includes('How to Enable'));
+            if (howToEnableHeading) howToEnableHeading.id = 'how-to-enable';
+            
+            // Add ID to "Example Output" section
+            const exampleOutputHeading = Array.from(content.querySelectorAll('h2')).find(h => h.textContent.includes('Example Output'));
+            if (exampleOutputHeading) exampleOutputHeading.id = 'example-output';
+            
+            // Add ID to "How the Thinking Process Works" section
+            const howItWorksHeading = Array.from(content.querySelectorAll('h2')).find(h => h.textContent.includes('How the Thinking Process Works'));
+            if (howItWorksHeading) howItWorksHeading.id = 'how-it-works';
+            
+            // Add ID to "Benefits of Using the Thinking Process" section
+            const benefitsHeading = Array.from(content.querySelectorAll('h2')).find(h => h.textContent.includes('Benefits'));
+            if (benefitsHeading) benefitsHeading.id = 'benefits';
+            
+            // Add ID to "Advanced Usage" section
+            const advancedUsageHeading = Array.from(content.querySelectorAll('h2')).find(h => h.textContent.includes('Advanced Usage'));
+            if (advancedUsageHeading) advancedUsageHeading.id = 'advanced-usage';
+            
+            // Add special styling to thinking process examples
+            const preElements = content.querySelectorAll('pre');
+            preElements.forEach(pre => {
+                if (pre.textContent.includes('<think>') || 
+                    pre.textContent.includes('thinking_process') || 
+                    pre.textContent.includes('To solve this problem')) {
+                    pre.parentElement.classList.add('thinking-process');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

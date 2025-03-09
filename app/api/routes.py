@@ -10,11 +10,13 @@ import json
 from fastapi.responses import StreamingResponse
 
 from app.services.llm_service import get_llm_response, get_available_models, get_llm_response_stream
-from app.models.chat_models import ChatMessage, ChatResponse, AdvancedChatMessage, FunctionCallingMessage, DocumentChatMessage
+from app.models.chat_models import ChatMessage, ChatResponse, AdvancedChatMessage, FunctionCallingMessage, DocumentChatMessage, WebSearchChatMessage, WebSearchResponse, TravelItineraryRequest, TravelItineraryResponse, ComplexTaskRequest, ComplexTaskResponse
 from app.core.config import settings
 from app.services.prompt_templates import template_manager
 from app.services.function_calling import function_registry, FunctionCall
 from app.services.document_service import document_processor
+from app.services.web_search import web_search
+from app.services.web_surfing_service import WebSurfingService
 
 # Load environment variables
 load_dotenv()
@@ -22,6 +24,7 @@ load_dotenv()
 # Create routers
 chat_router = APIRouter(tags=["chat"])
 health_router = APIRouter(tags=["health"])
+travel_router = APIRouter(tags=["travel"])
 
 # Health check endpoint
 @health_router.get("/health")
@@ -530,4 +533,194 @@ When answering questions:
             document_id=message.document_id
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+@chat_router.post("/chat/websearch", response_model=WebSearchResponse)
+async def web_search_chat(message: WebSearchChatMessage):
+    """
+    Chat with web search capabilities (Perplexity-like).
+    
+    This endpoint:
+    1. Takes a user query
+    2. Searches the web for relevant information
+    3. Retrieves and processes content from search results
+    4. Provides the information to the LLM with proper context
+    5. Returns a response with citations
+    """
+    start_time = time.time()
+    
+    try:
+        # Prepare model and parameters
+        model = message.model or settings.DEFAULT_MODEL
+        temperature = message.temperature or settings.TEMPERATURE
+        max_tokens = message.max_tokens or settings.MAX_TOKENS
+        
+        # Create a system prompt for web search
+        system_prompt = message.system_prompt or (
+            "You are a helpful AI assistant with web search capabilities. "
+            "You can search the web for up-to-date information and provide "
+            "accurate answers with citations. Always cite your sources using [1], [2], etc. "
+            "If the search results don't contain relevant information, acknowledge that "
+            "and provide the best answer you can based on your knowledge."
+        )
+        
+        # Search the web if enabled
+        search_context = ""
+        search_results = []
+        citations = []
+        
+        if message.search_enabled:
+            # Perform web search
+            search_data = await web_search.search_and_retrieve(
+                message.prompt, 
+                num_results=message.num_results
+            )
+            
+            # Extract search results and formatted text
+            search_results = search_data["search_results"]
+            search_context = search_data["formatted_text"]
+            
+            # Prepare citations
+            for i, result in enumerate(search_results):
+                citations.append({
+                    "number": i + 1,
+                    "title": result["title"],
+                    "url": result["link"],
+                    "snippet": result["snippet"]
+                })
+        
+        # Combine the user's prompt with search context
+        enhanced_prompt = f"{message.prompt}\n\n"
+        if search_context:
+            enhanced_prompt += f"Here is some information from the web that might help:\n\n{search_context}\n\n"
+            enhanced_prompt += "Please use this information to provide a comprehensive answer. Include citations like [1], [2], etc."
+        
+        # Get response from LLM
+        llm_response = await get_llm_response(
+            prompt=enhanced_prompt,
+            model=model,
+            system_prompt=system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            conversation_history=message.conversation_history,
+            show_thinking=message.show_thinking
+        )
+        
+        # Extract response and thinking process
+        response_text = llm_response["response"]
+        thinking_process = llm_response["thinking_process"]
+        
+        # Clean the response if needed
+        clean_response_text = clean_response(response_text)
+        
+        # Calculate processing time
+        processing_time = time.time() - start_time
+        
+        # Create response object
+        response = WebSearchResponse(
+            response=clean_response_text,
+            thinking_process=thinking_process,
+            model=model,
+            status="success",
+            processing_time=processing_time,
+            search_results=search_results if message.include_citations else None,
+            citations=citations if message.include_citations else None,
+            search_query=message.prompt
+        )
+        
+        return response
+        
+    except Exception as e:
+        # Log the error
+        print(f"Error in web search chat: {str(e)}")
+        
+        # Return error response
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing web search chat: {str(e)}"
+        )
+
+# Create a new router for travel itinerary
+@travel_router.post("/travel/itinerary", response_model=TravelItineraryResponse)
+async def generate_travel_itinerary(request: TravelItineraryRequest):
+    """
+    Generate a detailed travel itinerary with real-time data.
+    
+    This endpoint uses advanced web surfing to collect real-time information about the destination,
+    attractions, accommodations, and other travel details to create a comprehensive itinerary.
+    """
+    try:
+        start_time = time.time()
+        
+        # Generate the travel itinerary
+        result = await WebSurfingService.generate_travel_itinerary(
+            destination=request.destination,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            budget_range=request.budget_range,
+            interests=request.interests,
+            special_requests=request.special_requests
+        )
+        
+        # Calculate processing time
+        processing_time = time.time() - start_time
+        
+        return TravelItineraryResponse(
+            summary=result.get("summary", ""),
+            detailed_sections=result.get("detailed_sections", []),
+            html_template=result.get("html_template", ""),
+            processing_time=processing_time
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating travel itinerary: {str(e)}")
+
+@chat_router.post("/chat/complex-task", response_model=ComplexTaskResponse)
+async def process_complex_task(request: ComplexTaskRequest):
+    """
+    Process a complex task using advanced web surfing and visual understanding.
+    
+    This endpoint can handle a wide variety of complex tasks such as:
+    - Research tasks (academic, business, technical)
+    - Comparison tasks (products, services, options)
+    - Planning tasks (events, projects, schedules)
+    - Analysis tasks (data, trends, markets)
+    - Creative tasks (content creation, design ideas)
+    
+    The system will:
+    1. Break down the task into subtasks
+    2. Search the web for relevant information
+    3. Process web pages with visual understanding
+    4. Extract structured data
+    5. Synthesize information into a comprehensive response
+    """
+    try:
+        start_time = time.time()
+        
+        # Process the complex task with all parameters
+        result = await WebSurfingService.process_complex_task(
+            task_description=request.task_description,
+            task_type=request.task_type,
+            additional_context=request.additional_context,
+            visual_understanding=request.visual_understanding,
+            max_depth=request.max_depth
+        )
+        
+        # Calculate processing time
+        processing_time = time.time() - start_time
+        
+        return ComplexTaskResponse(
+            summary=result.get("summary", ""),
+            detailed_sections=result.get("detailed_sections", []),
+            html_template=result.get("html_template", ""),
+            task_type=result.get("task_type", request.task_type),
+            processing_time=processing_time
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing complex task: {str(e)}")
+
+# Add the travel router to the main app
+def setup_routes(app):
+    app.include_router(health_router, prefix="/api")
+    app.include_router(chat_router, prefix="/api")
+    app.include_router(travel_router, prefix="/api")  # Add the travel router
+    # Include other routers as needed 

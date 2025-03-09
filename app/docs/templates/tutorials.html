@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Tutorials - Surfer API Documentation{% endblock %}
+
+{% block sidebar %}
+<div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    <div class="position-sticky pt-3">
+        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+            <span>Tutorials</span>
+        </h6>
+        <ul class="nav flex-column">
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials">
+                    <i class="bi bi-grid"></i> All Tutorials
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/getting-started">
+                    <i class="bi bi-rocket-takeoff"></i> Getting Started
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/thinking-process">
+                    <i class="bi bi-lightbulb"></i> Thinking Process
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/advanced-chat">
+                    <i class="bi bi-chat-dots"></i> Advanced Chat
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/travel-itinerary">
+                    <i class="bi bi-map"></i> Travel Itineraries
+                </a>
+            </li>
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="/docs/tutorials/environment-setup">
+                    <i class="bi bi-gear"></i> Environment Setup
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h1 class="mb-4">Tutorials</h1>
+            <p class="lead">
+                Step-by-step guides to help you get started and make the most of the Surfer API.
+            </p>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Featured Tutorial</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h2>Using the Thinking Process Feature</h2>
+                            <p class="lead">Learn how to use the 'show_thinking' parameter to see the LLM's reasoning process.</p>
+                            
+                            <p>The Surfer API includes a powerful feature that allows you to see the LLM's reasoning process as it generates a response. This provides transparency into how the model approaches problems and arrives at conclusions.</p>
+                            
+                            <p>This tutorial covers:</p>
+                            <ul>
+                                <li>What the thinking process is and how it works</li>
+                                <li>How to enable it in your API calls</li>
+                                <li>Benefits of using the thinking process</li>
+                                <li>Advanced usage with streaming responses</li>
+                                <li>Best practices and technical details</li>
+                            </ul>
+                            
+                            <a href="/docs/tutorials/thinking-process" class="btn btn-primary mt-3">
+                                <i class="bi bi-lightbulb"></i> Read the Tutorial
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="thinking-process h-100">
+                                <h4><i class="bi bi-braces"></i> Example</h4>
+                                <pre>import requests
+
+response = requests.post(
+    "http://localhost:8000/api/chat",
+    json={
+        "prompt": "Solve this math problem...",
+        "model": "deepseek-r1:1.5b",
+        "show_thinking": True
+    }
+)
+
+result = response.json()
+print("Response:", result["response"])
+print("Thinking:", result["thinking_process"])</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for tutorial in tutorials %}
+        {% if tutorial.id != "thinking-process" %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3 class="card-title">
+                        {% if tutorial.id == "getting-started" %}
+                        <i class="bi bi-rocket-takeoff text-primary"></i>
+                        {% elif tutorial.id == "advanced-chat" %}
+                        <i class="bi bi-chat-dots text-primary"></i>
+                        {% elif tutorial.id == "travel-itinerary" %}
+                        <i class="bi bi-map text-primary"></i>
+                        {% elif tutorial.id == "environment-setup" %}
+                        <i class="bi bi-gear text-primary"></i>
+                        {% else %}
+                        <i class="bi bi-book text-primary"></i>
+                        {% endif %}
+                        {{ tutorial.title }}
+                    </h3>
+                    <p class="card-text">{{ tutorial.description }}</p>
+                </div>
+                <div class="card-footer">
+                    <a href="/docs/tutorials/{{ tutorial.id }}" class="btn btn-primary">Read Tutorial</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

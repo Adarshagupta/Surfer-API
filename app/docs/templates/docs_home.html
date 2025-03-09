@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}Surfer API Documentation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-md-12 text-center">
+            <h1 class="display-3 mb-4 fw-bold">Surfer API Documentation</h1>
+            <p class="lead fs-4 mb-5">
+                A comprehensive guide to using the Surfer API for interacting with various LLM providers and advanced web surfing capabilities.
+            </p>
+            <div class="d-flex justify-content-center gap-3 mb-5">
+                <a href="/docs/tutorials/getting-started" class="btn btn-primary btn-lg">
+                    <i class="bi bi-rocket-takeoff"></i> Get Started
+                </a>
+                <a href="/docs/api" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-code-slash"></i> API Reference
+                </a>
+                <a href="/docs/tester" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-lightning-charge"></i> Try API
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 feature-card">
+                <div class="card-body">
+                    <i class="bi bi-braces"></i>
+                    <h3>API Reference</h3>
+                    <p>Detailed documentation of all API endpoints, request/response formats, and examples.</p>
+                    <ul class="list-unstyled">
+                        {% for category, data in api_docs.items() %}
+                        <li class="mb-2">
+                            <a href="/docs/api/{{ category }}">{{ data.title }}</a>
+                            <small class="text-muted d-block">{{ data.endpoints|length }} endpoints</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="/docs/api" class="btn btn-primary">View API Reference</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 feature-card">
+                <div class="card-body">
+                    <i class="bi bi-book"></i>
+                    <h3>Tutorials</h3>
+                    <p>Step-by-step guides to help you get started and make the most of the Surfer API.</p>
+                    <ul class="list-unstyled">
+                        {% for tutorial in tutorials[:3] %}
+                        <li class="mb-2">
+                            <a href="/docs/tutorials/{{ tutorial.id }}">{{ tutorial.title }}</a>
+                            <small class="text-muted d-block">{{ tutorial.description }}</small>
+                        </li>
+                        {% endfor %}
+                        {% if tutorials|length > 3 %}
+                        <li class="mb-2">
+                            <a href="/docs/tutorials">And {{ tutorials|length - 3 }} more...</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="/docs/tutorials" class="btn btn-primary">View Tutorials</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 feature-card">
+                <div class="card-body">
+                    <i class="bi bi-lightning-charge"></i>
+                    <h3>API Tester</h3>
+                    <p>Interactive tool to test API endpoints directly from your browser.</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Test Endpoints</strong>
+                            <small class="text-muted d-block">Try out API calls with custom parameters</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>View Responses</strong>
+                            <small class="text-muted d-block">See formatted JSON responses</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Generate Code</strong>
+                            <small class="text-muted d-block">Get code snippets for your API calls</small>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="/docs/tester" class="btn btn-primary">Open API Tester</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Featured: Thinking Process</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h3>See How the LLM Thinks</h3>
+                            <p>The Surfer API includes a powerful feature that allows you to see the LLM's reasoning process as it generates a response. This provides transparency into how the model approaches problems and arrives at conclusions.</p>
+                            
+                            <p>Simply set <code>show_thinking: true</code> in your request to enable this feature:</p>
+                            
+                            <pre><code class="language-python">import requests
+
+response = requests.post(
+    "http://localhost:8000/api/chat",
+    json={
+        "prompt": "Solve this math problem: If a train travels at 120 km/h...",
+        "model": "deepseek-r1:1.5b",
+        "show_thinking": True
+    }
+)
+
+result = response.json()
+print("Response:", result["response"])
+print("Thinking Process:", result["thinking_process"])</code></pre>
+
+                            <div class="mt-4">
+                                <a href="/docs/tutorials/thinking-process" class="btn btn-primary">
+                                    <i class="bi bi-lightbulb"></i> Learn More About Thinking Process
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="thinking-process">
+                                <h4><i class="bi bi-braces"></i> Example Thinking Process</h4>
+                                <p>For the prompt: "Solve this math problem: If a train travels at 120 km/h and another train travels at 80 km/h in the opposite direction, how long will it take for them to be 500 km apart if they start 100 km apart?"</p>
+                                
+                                <pre>To solve this problem, I need to find how long it takes for the trains to be 500 km apart when they start 100 km apart.
+
+First, let me identify what I know:
+- Train A travels at 120 km/h
+- Train B travels at 80 km/h in the opposite direction
+- They start 100 km apart
+- I need to find when they'll be 500 km apart
+
+Since they're traveling in opposite directions, their relative speed is the sum of their individual speeds:
+120 km/h + 80 km/h = 200 km/h
+
+They need to increase their distance from 100 km to 500 km, so they need to add 400 km of separation.
+
+Time = Distance ÷ Speed
+Time = 400 km ÷ 200 km/h
+Time = 2 hours</pre>
+                                
+                                <div class="alert alert-primary mt-3">
+                                    <strong>Final Answer:</strong> The trains will be 500 km apart after 2 hours.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Getting Started</h5>
+                </div>
+                <div class="card-body">
+                    <h3>Installation</h3>
+                    <pre><code class="language-bash">git clone https://github.com/yourusername/Surfer-API.git
+cd Surfer-API
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt</code></pre>
+
+                    <h3>Configuration</h3>
+                    <pre><code class="language-bash">cp .env.template .env
+# Edit .env to configure your LLM providers and API keys</code></pre>
+
+                    <h3>Start the Server</h3>
+                    <pre><code class="language-bash">uvicorn app.main:app --reload</code></pre>
+
+                    <h3>Basic Usage</h3>
+                    <pre><code class="language-python">import requests
+
+response = requests.post(
+    "http://localhost:8000/api/chat",
+    json={
+        "prompt": "What is the capital of France?",
+        "model": "deepseek-r1:1.5b",
+        "temperature": 0.7
+    }
+)
+
+print(response.json())</code></pre>
+
+                    <div class="mt-4">
+                        <a href="/docs/tutorials/getting-started" class="btn btn-primary">Read Full Getting Started Guide</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Features</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="bi bi-cpu feature-icon"></i>
+                            <strong>Multiple LLM Providers</strong>
+                            <p class="mb-0 text-muted">Support for Ollama, OpenAI, Anthropic, Replicate, Deepseek, Amazon Bedrock, and custom endpoints.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-chat-dots feature-icon"></i>
+                            <strong>Advanced Chat Features</strong>
+                            <p class="mb-0 text-muted">Templates, function calling, streaming responses, and thinking process visualization.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-search feature-icon"></i>
+                            <strong>Web Search Integration</strong>
+                            <p class="mb-0 text-muted">Chat with real-time web search capabilities.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-file-earmark-text feature-icon"></i>
+                            <strong>Document Chat</strong>
+                            <p class="mb-0 text-muted">Chat with context from uploaded documents.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-globe feature-icon"></i>
+                            <strong>Complex Task Processing</strong>
+                            <p class="mb-0 text-muted">Process complex tasks using advanced web surfing and visual understanding.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-map feature-icon"></i>
+                            <strong>Travel Itinerary Generation</strong>
+                            <p class="mb-0 text-muted">Generate detailed travel itineraries with real-time data.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Environment Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <p>Configure your environment variables to use different LLM providers:</p>
+                    <pre><code class="language-bash"># LLM Provider Selection
+DEFAULT_LLM_PROVIDER=ollama
+
+# Ollama Configuration
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_DEFAULT_MODEL=deepseek-r1:1.5b
+
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_DEFAULT_MODEL=gpt-4o
+
+# Default Settings
+TEMPERATURE=0.7
+MAX_TOKENS=2048
+REQUEST_TIMEOUT=60.0</code></pre>
+                    <div class="mt-3">
+                        <a href="/docs/tutorials/environment-setup" class="btn btn-primary">View Full Configuration Guide</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

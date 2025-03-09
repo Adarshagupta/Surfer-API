@@ -12,16 +12,22 @@ from app.services.prompt_engineering import create_system_prompt, create_chat_pr
 # Load environment variables
 load_dotenv()
 
+# Environment variables with defaults
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "deepseek-r1:1.5b")
+DEFAULT_TEMPERATURE = float(os.getenv("TEMPERATURE", "0.7"))
+DEFAULT_MAX_TOKENS = int(os.getenv("MAX_TOKENS", "2048"))
+DEFAULT_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "60.0"))
+DEFAULT_PROMPT_TYPE = os.getenv("DEFAULT_PROMPT_TYPE", "general")
 
 async def get_llm_response(
     prompt: str,
-    model: str = "deepseek-r1:1.5b",
+    model: str = DEFAULT_MODEL,
     system_prompt: Optional[str] = None,
-    temperature: float = 0.7,
-    max_tokens: int = 2048,
+    temperature: float = DEFAULT_TEMPERATURE,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
     conversation_history: Optional[List[Dict[str, str]]] = None,
-    prompt_type: str = "general",
+    prompt_type: str = DEFAULT_PROMPT_TYPE,
     context: Optional[str] = None,
     show_thinking: bool = False
 ) -> Dict[str, Optional[str]]:
@@ -82,7 +88,7 @@ async def get_llm_response(
             response = await client.post(
                 f"{OLLAMA_BASE_URL}/api/chat",
                 json=payload,
-                timeout=60.0  # Increase timeout for longer responses
+                timeout=DEFAULT_TIMEOUT  # Use environment variable for timeout
             )
             
             if response.status_code != 200:
@@ -142,12 +148,12 @@ async def get_available_models():
 
 async def get_llm_response_stream(
     prompt: str,
-    model: str = "deepseek-r1:1.5b",
+    model: str = DEFAULT_MODEL,
     system_prompt: Optional[str] = None,
-    temperature: float = 0.7,
-    max_tokens: int = 2048,
+    temperature: float = DEFAULT_TEMPERATURE,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
     conversation_history: Optional[List[Dict[str, str]]] = None,
-    prompt_type: str = "general",
+    prompt_type: str = DEFAULT_PROMPT_TYPE,
     context: Optional[str] = None,
     show_thinking: bool = False
 ):
@@ -206,7 +212,7 @@ async def get_llm_response_stream(
                 "POST",
                 f"{OLLAMA_BASE_URL}/api/chat",
                 json=payload,
-                timeout=60.0
+                timeout=DEFAULT_TIMEOUT
             ) as response:
                 if response.status_code != 200:
                     error_message = f"Error from Ollama API: {response.status_code}"

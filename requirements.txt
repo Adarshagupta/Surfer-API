@@ -7,4 +7,7 @@ python-multipart==0.0.6
 Pillow==10.1.0
 pytesseract==0.3.10
 PyMuPDF==1.23.5
-numpy==1.26.1 
+numpy==1.26.1
+beautifulsoup4==4.12.2
+lxml==4.9.3
+html5lib==1.1 

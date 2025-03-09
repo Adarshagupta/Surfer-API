@@ -1,13 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 import os
 from dotenv import load_dotenv
 
-# Import routers
-from app.api.routes import chat_router, health_router
+# Import routers and setup function
+from app.api.routes import setup_routes
 from app.api.template_routes import template_router
 from app.api.document_routes import document_router
+from app.docs import docs_router
 
 # Import logging
 from app.core.logging import RequestLoggingMiddleware, logger
@@ -18,8 +20,8 @@ load_dotenv()
 # Create FastAPI app
 app = FastAPI(
     title="Surfer API",
-    description="A FastAPI backend for a ChatGPT-like application using Ollama",
-    version="0.3.0",
+    description="A FastAPI backend for a ChatGPT-like application with advanced web surfing capabilities",
+    version="0.4.0",
 )
 
 # Configure CORS
@@ -34,11 +36,13 @@ app.add_middleware(
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
 
-# Include routers
-app.include_router(chat_router, prefix="/api")
-app.include_router(health_router, prefix="/api")
+# Setup routes using the setup function
+setup_routes(app)
+
+# Include other routers
 app.include_router(template_router, prefix="/api")
 app.include_router(document_router, prefix="/api")
+app.include_router(docs_router)  # Include the documentation router
 
 # Startup event
 @app.on_event("startup")

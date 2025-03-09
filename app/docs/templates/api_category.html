@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}{{ docs.title }} - API Reference - Surfer API Documentation{% endblock %}
+
+{% block sidebar %}
+<div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    <div class="position-sticky pt-3">
+        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+            <span>API Categories</span>
+        </h6>
+        <ul class="nav flex-column">
+            {% for cat, data in api_docs.items() %}
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link {% if cat == category %}active{% endif %}" href="/docs/api/{{ cat }}">
+                    {{ data.title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+            <span>Endpoints</span>
+        </h6>
+        <ul class="nav flex-column">
+            {% for endpoint in docs.endpoints %}
+            <li class="nav-item sidebar-item">
+                <a class="sidebar-link" href="#{{ endpoint.path|replace('/', '_') }}">
+                    {{ endpoint.method }} {{ endpoint.path }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/docs">Documentation</a></li>
+                    <li class="breadcrumb-item"><a href="/docs/api">API Reference</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ docs.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h1 class="mb-4">{{ docs.title }}</h1>
+            <p class="lead">
+                {{ docs.description }}
+            </p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Endpoints</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for endpoint in docs.endpoints %}
+                        <li class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <span class="method-badge method-{{ endpoint.method|lower }}">{{ endpoint.method }}</span>
+                                <code class="endpoint-path">{{ endpoint.path }}</code>
+                            </div>
+                            <p class="mt-2 mb-0">{{ endpoint.summary }}</p>
+                            <a href="#{{ endpoint.path|replace('/', '_') }}" class="stretched-link"></a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            {% for endpoint in docs.endpoints %}
+            <div class="card mb-5" id="{{ endpoint.path|replace('/', '_') }}">
+                <div class="card-header d-flex align-items-center">
+                    <span class="method-badge method-{{ endpoint.method|lower }}">{{ endpoint.method }}</span>
+                    <span class="endpoint-path">{{ endpoint.path }}</span>
+                </div>
+                <div class="card-body">
+                    <h3>{{ endpoint.summary }}</h3>
+                    <p>{{ endpoint.description }}</p>
+                    
+                    {% if endpoint.get('parameters') %}
+                    <h4 class="mt-4">Parameters</h4>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for param in endpoint.parameters %}
+                            <tr>
+                                <td><code>{{ param.name }}</code></td>
+                                <td>{{ param.schema.type }}</td>
+                                <td>{{ "Yes" if param.required else "No" }}</td>
+                                <td>{{ param.description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                    
+                    {% if endpoint.get('request_body') %}
+                    <h4 class="mt-4">Request Body</h4>
+                    <p>Model: <code>{{ endpoint.request_body }}</code></p>
+                    {% endif %}
+                    
+                    {% if endpoint.get('example_request') %}
+                    <h4 class="mt-4">Example Request</h4>
+                    <pre><code class="language-json">{{ endpoint.example_request | tojson(indent=2) }}</code></pre>
+                    {% endif %}
+                    
+                    <h4 class="mt-4">Responses</h4>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Status Code</th>
+                                <th>Description</th>
+                                <th>Content Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for status, response in endpoint.responses.items() %}
+                            <tr>
+                                <td><code>{{ status }}</code></td>
+                                <td>{{ response.description }}</td>
+                                <td>
+                                    {% if response.get('content') %}
+                                        {% for content_type, content in response.content.items() %}
+                                            <code>{{ content_type }}</code>
+                                            {% if content.get('model') %}
+                                                <br>Model: <code>{{ content.model }}</code>
+                                            {% endif %}
+                                            {% if content.get('example') %}
+                                                <pre><code class="language-json">{{ content.example | tojson(indent=2) }}</code></pre>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <code>application/json</code>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <div class="mt-4">
+                        <button class="btn btn-primary test-endpoint" 
+                                data-path="{{ endpoint.path }}" 
+                                data-method="{{ endpoint.method }}">
+                            Test This Endpoint
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle "Test This Endpoint" buttons
+        document.querySelectorAll('.test-endpoint').forEach(button => {
+            button.addEventListener('click', function() {
+                // Redirect to the API tester page with the endpoint pre-selected
+                window.location.href = `/docs/tester?endpoint=${this.dataset.path}&method=${this.dataset.method}`;
+            });
+        });
+    });
+</script>
+{% endblock %} 

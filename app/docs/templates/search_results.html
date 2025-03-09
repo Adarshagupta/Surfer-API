@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Surfer API Documentation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h1 class="mb-4">Search Results</h1>
+            <p class="lead">
+                Search results for: <strong>{{ query }}</strong>
+            </p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="search-container">
+                <form action="/docs/search" method="get" class="mb-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="query" value="{{ query }}" placeholder="Search documentation...">
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            {% if results %}
+                <h3>Found {{ results|length }} results</h3>
+                
+                {% for result in results %}
+                <div class="search-result">
+                    <div class="search-result-type">{{ result.type|replace('_', ' ')|title }}</div>
+                    <div class="search-result-title">
+                        <a href="{{ result.url }}">{{ result.title }}</a>
+                    </div>
+                    <p>{{ result.description }}</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <h4 class="alert-heading">No results found</h4>
+                    <p>Your search for <strong>{{ query }}</strong> did not match any documents.</p>
+                    <hr>
+                    <p class="mb-0">Suggestions:</p>
+                    <ul>
+                        <li>Make sure all words are spelled correctly.</li>
+                        <li>Try different keywords.</li>
+                        <li>Try more general keywords.</li>
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

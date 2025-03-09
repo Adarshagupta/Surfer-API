@@ -74,4 +74,87 @@ class DocumentChatMessage(ChatMessage):
     document_prompt: Optional[str] = Field(
         None,
         description="Custom prompt for document context"
-    ) 
+    )
+
+class WebSearchChatMessage(ChatMessage):
+    """Model for chat messages with web search capabilities (Perplexity-like)."""
+    search_enabled: bool = Field(
+        True,
+        description="Whether to enable web search for this message"
+    )
+    num_results: int = Field(
+        3,
+        description="Number of search results to include"
+    )
+    include_citations: bool = Field(
+        True,
+        description="Whether to include citations in the response"
+    )
+    search_depth: str = Field(
+        "basic",
+        description="Depth of search: 'basic' (just snippets) or 'deep' (fetch and analyze content)"
+    )
+    time_limit: Optional[int] = Field(
+        None,
+        description="Time limit for search in seconds (None for no limit)"
+    )
+
+class WebSearchResponse(ChatResponse):
+    """Model for web search chat responses with additional fields."""
+    search_results: Optional[List[Dict[str, Any]]] = Field(
+        None,
+        description="Search results used to generate the response"
+    )
+    citations: Optional[List[Dict[str, str]]] = Field(
+        None,
+        description="Citations for information sources"
+    )
+    search_query: Optional[str] = Field(
+        None,
+        description="The search query used"
+    )
+
+class VisualElement(BaseModel):
+    """Visual element for travel itinerary."""
+    type: str = Field(..., description="Type of visual element (image, map, chart)")
+    description: str = Field(..., description="Description of what this visual shows")
+    source: Optional[str] = Field(None, description="Source URL if applicable")
+    map_url: Optional[str] = Field(None, description="URL for map image if type is map")
+
+class DetailedSection(BaseModel):
+    """Detailed section for travel itinerary."""
+    title: str = Field(..., description="Section title")
+    content: str = Field(..., description="Section content")
+    visual_elements: List[VisualElement] = Field(default_factory=list, description="Visual elements for this section")
+
+class TravelItineraryRequest(BaseModel):
+    """Request model for travel itinerary generation."""
+    destination: str = Field(..., description="Travel destination")
+    start_date: str = Field(..., description="Start date of the trip (YYYY-MM-DD)")
+    end_date: str = Field(..., description="End date of the trip (YYYY-MM-DD)")
+    budget_range: str = Field(..., description="Budget range for the trip (e.g., $2500-5000)")
+    interests: List[str] = Field(..., description="List of traveler interests")
+    special_requests: Optional[str] = Field(None, description="Any special requests or requirements")
+
+class TravelItineraryResponse(BaseModel):
+    """Response model for travel itinerary generation."""
+    summary: str = Field(..., description="Summary of the travel itinerary")
+    detailed_sections: List[DetailedSection] = Field(..., description="Detailed sections of the itinerary")
+    html_template: str = Field(..., description="HTML template for displaying the itinerary")
+    processing_time: float = Field(..., description="Time taken to process the request in seconds")
+
+class ComplexTaskRequest(BaseModel):
+    """Request model for processing complex tasks."""
+    task_description: str = Field(..., description="Detailed description of the task to be performed")
+    task_type: str = Field("general", description="Type of task (general, research, comparison, planning, analysis, creative)")
+    additional_context: Optional[str] = Field(None, description="Any additional context or information that might help with the task")
+    visual_understanding: bool = Field(True, description="Whether to use visual understanding capabilities")
+    max_depth: int = Field(2, description="Maximum depth of web page exploration (1-3)")
+
+class ComplexTaskResponse(BaseModel):
+    """Response model for complex task processing."""
+    summary: str = Field(..., description="Summary of the task results")
+    detailed_sections: List[DetailedSection] = Field(..., description="Detailed sections of the response")
+    html_template: str = Field(..., description="HTML template for displaying the results")
+    task_type: str = Field(..., description="Type of task that was processed")
+    processing_time: float = Field(..., description="Time taken to process the request in seconds") 
