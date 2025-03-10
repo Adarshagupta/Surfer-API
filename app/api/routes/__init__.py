@@ -1,24 +1,25 @@
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
+from app.api.routes import (
+    auth,
+    users,
+    api_keys,
+    chat,
+    health,
+    travel,
+    chat_history
+)
+
+api_router = APIRouter()
+
+# Add routes
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(api_keys.router, prefix="/api-keys", tags=["api-keys"])
+api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
+api_router.include_router(health.router, prefix="/health", tags=["health"])
+api_router.include_router(travel.router, prefix="/travel", tags=["travel"])
+api_router.include_router(chat_history.router, prefix="/chat", tags=["chat-history"])
 
 def setup_routes(app: FastAPI) -> None:
-    """
-    Set up all API routes.
-    
-    Args:
-        app: FastAPI application
-    """
-    # Import routers
-    from app.api.routes.auth import router as auth_router
-    from app.api.routes.api_keys import router as api_keys_router
-    from app.api.routes.users import router as users_router
-    from app.api.routes.chat import router as chat_router
-    from app.api.routes.health import router as health_router
-    from app.api.routes.travel import router as travel_router
-    
-    # Include routers
-    app.include_router(auth_router, prefix="/api")
-    app.include_router(api_keys_router, prefix="/api")
-    app.include_router(users_router, prefix="/api")
-    app.include_router(chat_router, prefix="/api")
-    app.include_router(health_router, prefix="/api")
-    app.include_router(travel_router, prefix="/api") 
+    """Setup all API routes."""
+    app.include_router(api_router, prefix="/api") 

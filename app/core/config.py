@@ -2,6 +2,7 @@ import os
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 from typing import Optional, List
+from datetime import timedelta
 
 # Load environment variables
 load_dotenv()
@@ -14,6 +15,11 @@ class Settings(BaseSettings):
     
     # CORS settings
     BACKEND_CORS_ORIGINS: List[str] = ["*"]  # For development only
+    
+    # Authentication settings
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")  # Change in production
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
     
     # Ollama settings
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")

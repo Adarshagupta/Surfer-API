@@ -1,5 +1,45 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, JSON
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+import datetime
+
+from app.core.database import Base
+
+class ChatHistory(Base):
+    """SQLAlchemy model for chat history."""
+    __tablename__ = "chat_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    message = Column(Text, nullable=False)
+    response = Column(Text, nullable=False)
+    model = Column(String)
+    tokens_used = Column(Integer)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    context_id = Column(Integer, ForeignKey("user_contexts.id"), nullable=True)
+    
+    # Relationships
+    user = relationship("User", back_populates="chat_history")
+    context = relationship("UserContext", back_populates="chat_history")
+
+class UserContext(Base):
+    """SQLAlchemy model for user's contextual learning."""
+    __tablename__ = "user_contexts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(Text)
+    context_data = Column(JSON, nullable=False, default=dict)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="contexts")
+    chat_history = relationship("ChatHistory", back_populates="context")
 
 class ChatMessage(BaseModel):
     """Model for incoming chat messages."""
@@ -157,4 +197,66 @@ class ComplexTaskResponse(BaseModel):
     detailed_sections: List[DetailedSection] = Field(..., description="Detailed sections of the response")
     html_template: str = Field(..., description="HTML template for displaying the results")
     task_type: str = Field(..., description="Type of task that was processed")
-    processing_time: float = Field(..., description="Time taken to process the request in seconds") 
+    processing_time: float = Field(..., description="Time taken to process the request in seconds")
+
+class ChatHistoryBase(BaseModel):
+    """Base Pydantic model for chat history."""
+    message: str = Field(..., description="The user's message")
+    response: str = Field(..., description="The model's response")
+    model: Optional[str] = Field(None, description="The model used for the response")
+    tokens_used: Optional[int] = Field(None, description="Number of tokens used")
+    context_id: Optional[int] = Field(None, description="ID of the associated context")
+
+class ChatHistoryCreate(ChatHistoryBase):
+    """Pydantic model for creating chat history entries."""
+    user_id: int
+
+class ChatHistoryInDB(ChatHistoryBase):
+    """Pydantic model for chat history in database."""
+    id: int
+    user_id: int
+    created_at: datetime.datetime
+    
+    class Config:
+        orm_mode = True
+
+class ChatHistoryResponse(ChatHistoryInDB):
+    """Pydantic model for chat history response."""
+    pass
+
+class UserContextBase(BaseModel):
+    """Base Pydantic model for user context."""
+    name: str = Field(..., description="Name of the context")
+    description: Optional[str] = Field(None, description="Description of the context")
+    context_data: Dict[str, Any] = Field(default_factory=dict, description="Context data")
+
+class UserContextCreate(UserContextBase):
+    """Pydantic model for creating user contexts."""
+    user_id: int
+
+class UserContextUpdate(BaseModel):
+    """Pydantic model for updating user contexts."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    context_data: Optional[Dict[str, Any]] = None
+    is_active: Optional[bool] = None
+
+class UserContextInDB(UserContextBase):
+    """Pydantic model for user context in database."""
+    id: int
+    user_id: int
+    is_active: bool
+    created_at: datetime.datetime
+    updated_at: Optional[datetime.datetime] = None
+    
+    class Config:
+        orm_mode = True
+
+class UserContextResponse(UserContextInDB):
+    """Pydantic model for user context response."""
+    pass
+
+class ChatWithContextRequest(ChatMessage):
+    """Model for chat messages with context."""
+    context_id: Optional[int] = Field(None, description="ID of the context to use")
+    update_context: bool = Field(True, description="Whether to update the context with this interaction") 

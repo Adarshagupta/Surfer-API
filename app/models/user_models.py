@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Float
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Float, Numeric, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field, validator, HttpUrl
+from typing import Optional, List, Dict, Any
 import uuid
 import datetime
 from passlib.context import CryptContext
@@ -24,14 +24,40 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String)
+    
+    # Additional profile information
+    avatar_url = Column(String)
+    bio = Column(Text)
+    company = Column(String)
+    website = Column(String)
+    location = Column(String)
+    phone = Column(String)
+    preferences = Column(JSON, default={})
+    
+    # Account status
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=False)
+    email_verified = Column(Boolean, default=False)
+    
+    # Usage limits and billing
+    api_quota = Column(Integer, default=1000)  # Monthly API call limit
+    tokens_used = Column(Integer, default=0)
+    total_cost = Column(Numeric(10, 2), default=0)  # Total cost in USD
+    billing_status = Column(String, default="free")  # free, premium, enterprise
+    subscription_expires = Column(DateTime(timezone=True), nullable=True)
+    
+    # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    last_login = Column(DateTime(timezone=True))
+    last_active = Column(DateTime(timezone=True))
     
     # Relationships
     api_keys = relationship("APIKey", back_populates="user", cascade="all, delete-orphan")
     usage_records = relationship("UsageRecord", back_populates="user", cascade="all, delete-orphan")
+    chat_history = relationship("ChatHistory", back_populates="user", cascade="all, delete-orphan")
+    contexts = relationship("UserContext", back_populates="user", cascade="all, delete-orphan")
     
     def verify_password(self, plain_password):
         """Verify a plain password against the hashed password."""
@@ -75,8 +101,12 @@ class UsageRecord(Base):
     api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=True)
     endpoint = Column(String, nullable=False)
     tokens_used = Column(Integer, default=0)
+    cost = Column(Numeric(10, 4), default=0)  # Cost in USD
     model = Column(String)
     status = Column(String)
+    response_time = Column(Float)  # Response time in seconds
+    error_message = Column(Text)
+    request_metadata = Column(JSON, default={})  # Additional request metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
@@ -85,11 +115,23 @@ class UsageRecord(Base):
 
 
 # Pydantic Models for API
+class UserProfile(BaseModel):
+    """Pydantic model for user profile information."""
+    avatar_url: Optional[HttpUrl] = None
+    bio: Optional[str] = None
+    company: Optional[str] = None
+    website: Optional[HttpUrl] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
+    preferences: Dict[str, Any] = {}
+
+
 class UserBase(BaseModel):
     """Base Pydantic model for user data."""
     email: EmailStr
     username: str
     full_name: Optional[str] = None
+    profile: Optional[UserProfile] = None
 
 
 class UserCreate(UserBase):
@@ -105,6 +147,10 @@ class UserCreate(UserBase):
             raise ValueError('Password must contain at least one digit')
         if not any(char.isupper() for char in v):
             raise ValueError('Password must contain at least one uppercase letter')
+        if not any(char.islower() for char in v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not any(char in string.punctuation for char in v):
+            raise ValueError('Password must contain at least one special character')
         return v
 
 
@@ -114,6 +160,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     full_name: Optional[str] = None
     password: Optional[str] = None
+    profile: Optional[UserProfile] = None
     is_active: Optional[bool] = None
 
 
@@ -122,10 +169,19 @@ class UserInDB(UserBase):
     id: int
     is_active: bool
     is_superuser: bool
+    is_verified: bool
+    email_verified: bool
+    api_quota: int
+    tokens_used: int
+    total_cost: float
+    billing_status: str
+    subscription_expires: Optional[datetime.datetime] = None
     created_at: datetime.datetime
+    last_login: Optional[datetime.datetime] = None
+    last_active: Optional[datetime.datetime] = None
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserResponse(UserInDB):
@@ -168,7 +224,7 @@ class APIKeyInDB(APIKeyBase):
     last_used_at: Optional[datetime.datetime] = None
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class APIKeyResponse(APIKeyBase):
@@ -181,15 +237,19 @@ class APIKeyResponse(APIKeyBase):
     last_used_at: Optional[datetime.datetime] = None
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UsageRecordBase(BaseModel):
     """Base Pydantic model for usage record."""
     endpoint: str
     tokens_used: int = 0
+    cost: float = 0
     model: Optional[str] = None
     status: Optional[str] = None
+    response_time: Optional[float] = None
+    error_message: Optional[str] = None
+    request_metadata: Dict[str, Any] = {}
 
 
 class UsageRecordCreate(UsageRecordBase):
@@ -206,7 +266,7 @@ class UsageRecordInDB(UsageRecordBase):
     created_at: datetime.datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UsageRecordResponse(UsageRecordInDB):
@@ -218,5 +278,10 @@ class UsageSummary(BaseModel):
     """Pydantic model for usage summary."""
     total_requests: int
     total_tokens: int
+    total_cost: float
     models_used: List[str]
-    endpoints_used: List[str] 
+    endpoints_used: List[str]
+    average_response_time: float
+    error_rate: float
+    usage_by_day: Dict[str, int]
+    cost_by_model: Dict[str, float] 
