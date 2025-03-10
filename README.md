@@ -435,3 +435,346 @@ if __name__ == "__main__":
 ## Development
 
 This project uses Ollama for the development phase only. For production, consider using a more robust LLM solution.
+
+
+## Test API 
+
+# Surfer API Tutorial: Testing All Endpoints
+
+This tutorial will guide you through testing all the API endpoints in the Surfer API application using Postman or any other API testing tool.
+
+## Authentication Endpoints
+
+### 1. Signup
+
+**Endpoint:** `POST /api/auth/signup`
+
+**Request Body:**
+```json
+{
+  "email": "test@example.com",
+  "username": "testuser",
+  "password": "Password123!",
+  "full_name": "Test User"
+}
+```
+
+**Headers:**
+- Content-Type: application/json
+
+### 2. Login (Get Token)
+
+**Endpoint:** `POST /api/auth/token`
+
+**Request Body (Form Data):**
+- username: testuser
+- password: Password123!
+
+**Headers:**
+- Content-Type: application/x-www-form-urlencoded
+
+**Response:** Will include an access token that you'll need for authenticated endpoints.
+
+### 3. Get Current User
+
+**Endpoint:** `GET /api/auth/me`
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+### 4. Logout
+
+**Endpoint:** `POST /api/auth/logout`
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+## API Key Management
+
+### 1. Create API Key
+
+**Endpoint:** `POST /api/api-keys`
+
+**Request Body:**
+```json
+{
+  "name": "My Test API Key",
+  "expires_at": "2025-12-31T23:59:59Z"
+}
+```
+
+**Headers:**
+- Content-Type: application/json
+- Authorization: Bearer {your_access_token}
+
+### 2. List API Keys
+
+**Endpoint:** `GET /api/api-keys`
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+### 3. Delete API Key
+
+**Endpoint:** `DELETE /api/api-keys/{key_id}`
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+## Chat Endpoints
+
+### 1. Basic Chat
+
+**Endpoint:** `POST /api/chat`
+
+**Request Body:**
+```json
+{
+  "prompt": "What is artificial intelligence?",
+  "model": "deepseek-r1:1.5b",
+  "temperature": 0.7,
+  "max_tokens": 500,
+  "show_thinking": false
+}
+```
+
+**Headers:**
+- Content-Type: application/json
+- Authorization: Bearer {your_access_token}
+
+### 2. Get Available Models
+
+**Endpoint:** `GET /api/chat/models`
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+### 3. Streaming Chat
+
+**Endpoint:** `POST /api/chat/stream`
+
+**Request Body:**
+```json
+{
+  "prompt": "Write a short poem about technology",
+  "model": "deepseek-r1:1.5b",
+  "temperature": 0.8,
+  "max_tokens": 200
+}
+```
+
+**Headers:**
+- Content-Type: application/json
+- Authorization: Bearer {your_access_token}
+
+### 4. Advanced Chat with Templates
+
+**Endpoint:** `POST /api/chat/advanced`
+
+**Request Body:**
+```json
+{
+  "prompt": "I need help understanding this code",
+  "template_id": "code_explanation",
+  "template_variables": {
+    "language": "python",
+    "code": "def fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a"
+  },
+  "temperature": 0.5
+}
+```
+
+**Headers:**
+- Content-Type: application/json
+- Authorization: Bearer {your_access_token}
+
+### 5. Chat with Context
+
+**Endpoint:** `POST /api/chat/context`
+
+**Request Body:**
+```json
+{
+  "prompt": "Tell me more about that",
+  "context_id": 1,
+  "update_context": true
+}
+```
+
+**Headers:**
+- Content-Type: application/json
+- Authorization: Bearer {your_access_token}
+
+### 6. Web Search Chat
+
+**Endpoint:** `POST /api/chat/websearch`
+
+**Request Body:**
+```json
+{
+  "prompt": "What are the latest developments in quantum computing?",
+  "search_enabled": true,
+  "num_results": 3,
+  "include_citations": true,
+  "search_depth": "deep",
+  "temperature": 0.7,
+  "max_tokens": 1000
+}
+```
+
+**Headers:**
+- Content-Type: application/json
+- Authorization: Bearer {your_access_token}
+
+## Context Management
+
+### 1. Create Context
+
+**Endpoint:** `POST /api/chat/contexts`
+
+**Request Body:**
+```json
+{
+  "name": "Project Research",
+  "description": "Research for my quantum computing project",
+  "context_data": {
+    "topic": "quantum computing",
+    "history": []
+  }
+}
+```
+
+**Headers:**
+- Content-Type: application/json
+- Authorization: Bearer {your_access_token}
+
+### 2. List Contexts
+
+**Endpoint:** `GET /api/chat/contexts`
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+### 3. Get Specific Context
+
+**Endpoint:** `GET /api/chat/contexts/{context_id}`
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+### 4. Update Context
+
+**Endpoint:** `PUT /api/chat/contexts/{context_id}`
+
+**Request Body:**
+```json
+{
+  "name": "Updated Project Research",
+  "description": "Updated research for my quantum computing project",
+  "context_data": {
+    "topic": "quantum computing advances",
+    "history": []
+  }
+}
+```
+
+**Headers:**
+- Content-Type: application/json
+- Authorization: Bearer {your_access_token}
+
+### 5. Delete Context
+
+**Endpoint:** `DELETE /api/chat/contexts/{context_id}`
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+## Chat History
+
+### 1. Get Chat History
+
+**Endpoint:** `GET /api/chat/chat-history`
+
+**Query Parameters (all optional):**
+- context_id: 1
+- start_date: 2023-01-01
+- end_date: 2023-12-31
+- page: 1
+- page_size: 10
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+### 2. Delete Chat History Entry
+
+**Endpoint:** `DELETE /api/chat/chat-history/{chat_id}`
+
+**Headers:**
+- Authorization: Bearer {your_access_token}
+
+## Testing Multi-Provider LLM Selection
+
+To test different LLM providers, you can specify the model in your chat requests. The system will use the appropriate provider based on the model name:
+
+### OpenAI Models
+
+```json
+{
+  "prompt": "What is artificial intelligence?",
+  "model": "gpt-4o",
+  "temperature": 0.7
+}
+```
+
+### Anthropic Models
+
+```json
+{
+  "prompt": "What is artificial intelligence?",
+  "model": "claude-3-opus-20240229",
+  "temperature": 0.7
+}
+```
+
+### Ollama Models
+
+```json
+{
+  "prompt": "What is artificial intelligence?",
+  "model": "deepseek-r1:1.5b",
+  "temperature": 0.7
+}
+```
+
+### Hugging Face Models
+
+```json
+{
+  "prompt": "What is artificial intelligence?",
+  "model": "mistralai/Mistral-7B-Instruct-v0.1",
+  "temperature": 0.7
+}
+```
+
+## Testing Multi-Provider Search
+
+The search provider is configured at the server level, but you can test web search functionality with:
+
+```json
+{
+  "prompt": "What are the latest developments in quantum computing?",
+  "search_enabled": true,
+  "num_results": 3,
+  "include_citations": true
+}
+```
+
+## Tips for Testing
+
+1. **Save the Token**: After logging in, save the access token for use in subsequent requests.
+2. **Use Collections**: In Postman, organize your requests in collections for easier testing.
+3. **Use Environment Variables**: Store your base URL, token, and other common values as environment variables.
+4. **Check Response Codes**: Successful requests typically return 200 OK or 201 Created status codes.
+5. **Error Handling**: If you get errors, check the response body for detailed error messages.
+
+Would you like me to provide more details on any specific endpoint or feature?
