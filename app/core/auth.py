@@ -14,7 +14,7 @@ SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a new access token."""
@@ -36,11 +36,22 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     )
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: int = payload.get("user_id")
+        # Check for both 'sub' and 'user_id' to support different token formats
+        user_id = payload.get("user_id")
         if user_id is None:
-            raise credentials_exception
+            # Try 'sub' field which is commonly used
+            sub = payload.get("sub")
+            if sub is None:
+                raise credentials_exception
+            # Convert to int if it's a string (common in JWT)
+            try:
+                user_id = int(sub)
+            except (ValueError, TypeError):
+                user_id = sub
+                
         token_data = TokenData(user_id=user_id, exp=payload.get("exp"))
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT Error: {str(e)}")
         raise credentials_exception
     
     user = db.query(User).filter(User.id == token_data.user_id).first()

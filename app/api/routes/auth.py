@@ -18,7 +18,7 @@ from app.services.auth_service import (
 )
 import redis
 
-router = APIRouter(prefix="/auth", tags=["authentication"])
+router = APIRouter(tags=["authentication"])
 
 @router.post("/signup", response_model=UserInDB, status_code=status.HTTP_201_CREATED)
 async def signup(user_data: UserCreate, db: Session = Depends(get_db)) -> Any:

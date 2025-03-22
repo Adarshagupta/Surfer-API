@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 import re
 import json
 from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
+import datetime
 
 from app.services.llm_service import get_llm_response, get_available_models, get_llm_response_stream
 from app.models.chat_models import ChatMessage, ChatResponse, AdvancedChatMessage, FunctionCallingMessage, DocumentChatMessage, WebSearchChatMessage, WebSearchResponse, TravelItineraryRequest, TravelItineraryResponse, ComplexTaskRequest, ComplexTaskResponse
@@ -17,6 +19,9 @@ from app.services.function_calling import function_registry, FunctionCall
 from app.services.document_service import document_processor
 from app.services.web_search import web_search
 from app.services.web_surfing_service import WebSurfingService
+from app.core.database import get_db
+from app.core.auth import get_current_user
+from app.models.user_models import User
 
 # Load environment variables
 load_dotenv()
@@ -42,7 +47,11 @@ async def health_check():
 
 # Chat endpoint
 @chat_router.post("/chat", response_model=ChatResponse)
-async def chat(message: ChatMessage):
+async def chat(
+    message: ChatMessage, 
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Process a chat message and return a response from the LLM."""
     try:
         start_time = time.time()
@@ -63,6 +72,23 @@ async def chat(message: ChatMessage):
         
         # Calculate processing time
         processing_time = time.time() - start_time
+        
+        # Save to chat history if database is available
+        try:
+            chat_history = ChatMessage(
+                user_id=current_user.id,
+                prompt=message.prompt,
+                response=response_data["response"],
+                model=message.model or settings.DEFAULT_MODEL,
+                temperature=message.temperature or settings.TEMPERATURE,
+                max_tokens=message.max_tokens or settings.MAX_TOKENS,
+                created_at=datetime.datetime.now()
+            )
+            db.add(chat_history)
+            db.commit()
+        except Exception as db_error:
+            # Log the database error but continue processing
+            print(f"Error saving chat history: {str(db_error)}")
         
         # Get the raw response
         raw_response = response_data["response"]
@@ -139,7 +165,10 @@ async def get_models():
 
 # Streaming chat endpoint
 @chat_router.post("/chat/stream")
-async def stream_chat(message: ChatMessage):
+async def stream_chat(
+    message: ChatMessage,
+    current_user: User = Depends(get_current_user)
+):
     """Process a chat message and stream the response from the LLM."""
     try:
         # Start timing
@@ -194,7 +223,10 @@ async def stream_llm_response(
 
 # Advanced chat endpoint with template support
 @chat_router.post("/chat/advanced", response_model=ChatResponse)
-async def advanced_chat(message: AdvancedChatMessage):
+async def advanced_chat(
+    message: AdvancedChatMessage,
+    current_user: User = Depends(get_current_user)
+):
     """Process a chat message using a template and return a response from the LLM."""
     try:
         start_time = time.time()
@@ -536,7 +568,10 @@ When answering questions:
         raise HTTPException(status_code=500, detail=str(e))
 
 @chat_router.post("/chat/websearch", response_model=WebSearchResponse)
-async def web_search_chat(message: WebSearchChatMessage):
+async def web_search_chat(
+    message: WebSearchChatMessage,
+    current_user: User = Depends(get_current_user)
+):
     """
     Chat with web search capabilities (Perplexity-like).
     
@@ -720,7 +755,28 @@ async def process_complex_task(request: ComplexTaskRequest):
 
 # Add the travel router to the main app
 def setup_routes(app):
+    # Include all routers directly
     app.include_router(health_router, prefix="/api")
-    app.include_router(chat_router, prefix="/api")
-    app.include_router(travel_router, prefix="/api")  # Add the travel router
-    # Include other routers as needed 
+    # Don't include chat_router from this file, use the one from routes/chat.py instead
+    # app.include_router(chat_router, prefix="/api")
+    app.include_router(travel_router, prefix="/api")
+    
+    # Import and include the API keys router
+    from app.api.routes.api_keys import router as api_keys_router
+    app.include_router(api_keys_router, prefix="/api/api-keys")
+    
+    # Import and include the auth router
+    from app.api.routes.auth import router as auth_router
+    app.include_router(auth_router, prefix="/api/auth")
+    
+    # Import and include the users router
+    from app.api.routes.users import router as users_router
+    app.include_router(users_router, prefix="/api/users")
+    
+    # Import and include the chat history router
+    from app.api.routes.chat_history import router as chat_history_router
+    app.include_router(chat_history_router, prefix="/api/chat")
+    
+    # Import and include the chat router from routes/chat.py
+    from app.api.routes.chat import router as modular_chat_router
+    app.include_router(modular_chat_router, prefix="/api/chat") 

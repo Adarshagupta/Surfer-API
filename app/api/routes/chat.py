@@ -15,7 +15,7 @@ from app.services.llm_service import get_llm_response
 
 router = APIRouter(tags=["chat"])
 
-@router.post("/chat")
+@router.post("/")
 async def chat(
     message: ChatMessage,
     db: Session = Depends(get_db),
@@ -52,7 +52,7 @@ async def chat(
         processing_time=0.5
     )
 
-@router.post("/chat/context")
+@router.post("/context")
 async def contextual_chat(
     message: ChatWithContextRequest,
     db: Session = Depends(get_db),
@@ -116,13 +116,21 @@ async def contextual_chat(
         processing_time=0.5
     )
 
-@router.post("/chat/stream")
-async def stream_chat(message: ChatMessage):
+@router.post("/stream")
+async def stream_chat(
+    message: ChatMessage,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Send a message to the LLM and get a streaming response."""
     return {"content": "Placeholder streaming response", "full_response": ""}
 
-@router.post("/chat/advanced")
-async def advanced_chat(message: AdvancedChatMessage) -> ChatResponse:
+@router.post("/advanced")
+async def advanced_chat(
+    message: AdvancedChatMessage,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> ChatResponse:
     """Send a message with template support and additional options."""
     return ChatResponse(
         content="This is a placeholder advanced response",
@@ -131,8 +139,12 @@ async def advanced_chat(message: AdvancedChatMessage) -> ChatResponse:
         processing_time=0.5
     )
 
-@router.post("/chat/function")
-async def function_chat(message: FunctionCallingMessage) -> ChatResponse:
+@router.post("/function")
+async def function_chat(
+    message: FunctionCallingMessage,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> ChatResponse:
     """Chat with function calling capabilities."""
     return ChatResponse(
         content="This is a placeholder function response",
@@ -141,8 +153,12 @@ async def function_chat(message: FunctionCallingMessage) -> ChatResponse:
         processing_time=0.5
     )
 
-@router.post("/chat/document")
-async def document_chat(message: DocumentChatMessage) -> ChatResponse:
+@router.post("/document")
+async def document_chat(
+    message: DocumentChatMessage,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> ChatResponse:
     """Chat with context from a document."""
     return ChatResponse(
         content="This is a placeholder document response",
@@ -151,8 +167,12 @@ async def document_chat(message: DocumentChatMessage) -> ChatResponse:
         processing_time=0.5
     )
 
-@router.post("/chat/websearch")
-async def websearch_chat(message: WebSearchChatMessage) -> WebSearchResponse:
+@router.post("/websearch")
+async def websearch_chat(
+    message: WebSearchChatMessage,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> WebSearchResponse:
     """Chat with web search capabilities."""
     return WebSearchResponse(
         content="This is a placeholder web search response",
@@ -163,8 +183,12 @@ async def websearch_chat(message: WebSearchChatMessage) -> WebSearchResponse:
         citations=[]
     )
 
-@router.post("/chat/complex-task")
-async def complex_task(request: ComplexTaskRequest) -> ComplexTaskResponse:
+@router.post("/complex-task")
+async def complex_task(
+    request: ComplexTaskRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> ComplexTaskResponse:
     """Process complex tasks using advanced web surfing and visual understanding."""
     return ComplexTaskResponse(
         content="This is a placeholder complex task response",
