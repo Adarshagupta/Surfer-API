@@ -41,6 +41,8 @@ A FastAPI backend for a ChatGPT-like application using Ollama with the deepseek-
    ```
 5. Start the FastAPI server:
    ```
+      lsof -i :8000
+   kill -9 <PID>
    uvicorn app.main:app --reload
    ```
 
